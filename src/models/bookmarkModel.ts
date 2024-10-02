@@ -1,0 +1,42 @@
+import { Schema, model } from "mongoose";
+export interface IBookMark extends Document {
+  title: string;
+  link: string;
+  description?: string;
+  tag: string;
+  topics?: string; // presently i perfer to go with optional
+  createdAt: Date;
+  updatedAt: Date;
+  image?: string;
+}
+const bookMarkSchema = new Schema<IBookMark>(
+  {
+    title: {
+      type: String,
+      required: [true, "Title is Compulsory"],
+    },
+    link: {
+      type: String,
+      required: [true, "Bookmark Link is Essential"],
+      unique: true,
+    },
+    description: {
+      type: String,
+    },
+    tag: {
+      type: String,
+      required: [true, "Tag will help to find your Bookmark"],
+    },
+    topics: {
+      type: String, // some default topic and then user will create their own topics
+    },
+    image: {
+      type: String,
+    },
+  },
+  {
+    timestamps: true, // This automatically adds createdAt and updatedAt fields
+  }
+);
+
+export const Bookmark = model<IBookMark>("Bookmark", bookMarkSchema);
