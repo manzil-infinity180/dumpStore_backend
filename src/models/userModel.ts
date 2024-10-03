@@ -1,11 +1,11 @@
-import mongoose, { Schema, model } from "mongoose";
+import mongoose, { Schema, model, Document } from "mongoose";
 // Define a User interface
 export interface IUser extends Document {
   _id: mongoose.Schema.Types.ObjectId;
   id: string;
   displayName: string;
-  emails?: { value: string };
-  photos?: { value: string };
+  emails?: string;
+  photos?: string;
   provider: string;
   posts?: Schema.Types.ObjectId[];
 }

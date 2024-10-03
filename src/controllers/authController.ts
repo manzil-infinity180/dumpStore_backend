@@ -5,7 +5,7 @@ import { NextFunction, Request, Response } from "express";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as GithubStrategy } from "passport-github2";
-import { User } from "../models/userModel.js";
+import { IUser, User } from "../models/userModel.js";
 import mongoose from "mongoose";
 
 // Passport serialization
@@ -50,7 +50,7 @@ passport.use(
       // Here you would typically find or create a user in your database
 
       // TODO : Is user existed or not
-      const user = {
+      const user: Pick<IUser, "id" | "displayName" | "emails" | "photos" | "provider"> = {
         id: profile.id,
         displayName: profile.displayName,
         emails: profile._json.email,
@@ -85,7 +85,7 @@ passport.use(
       profile: any,
       done: (error: any, user?: any) => void
     ) => {
-      const user = {
+      const user: Pick<IUser, "id" | "displayName" | "emails" | "photos" | "provider"> = {
         id: profile.id,
         displayName: profile.displayName || profile.username,
         emails: profile._json.email,
