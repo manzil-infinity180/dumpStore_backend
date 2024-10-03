@@ -1,7 +1,7 @@
 import mongoose, { Schema, model } from "mongoose";
 // Define a User interface
-export interface IUser {
-  // _id?: mongoose.Types.ObjectId;
+export interface IUser extends Document {
+  _id: mongoose.Schema.Types.ObjectId;
   id: string;
   displayName: string;
   emails?: { value: string };

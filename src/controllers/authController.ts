@@ -1,12 +1,11 @@
 import dotenv from "dotenv";
 dotenv.config();
-import { Request } from "express";
+import jwt from "jsonwebtoken";
+import { NextFunction, Request, Response } from "express";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as GithubStrategy } from "passport-github2";
-import { type IUser } from "../models/userModel.js";
 import { User } from "../models/userModel.js";
-import { nextTick } from "process";
 import mongoose from "mongoose";
 
 // Passport serialization
@@ -51,7 +50,7 @@ passport.use(
       // Here you would typically find or create a user in your database
 
       // TODO : Is user existed or not
-      const user: IUser = {
+      const user = {
         id: profile.id,
         displayName: profile.displayName,
         emails: profile._json.email,
@@ -86,7 +85,7 @@ passport.use(
       profile: any,
       done: (error: any, user?: any) => void
     ) => {
-      const user: IUser = {
+      const user = {
         id: profile.id,
         displayName: profile.displayName || profile.username,
         emails: profile._json.email,
@@ -120,3 +119,28 @@ passport.use(
 // passport.deserializeUser((user: Express.User ,done) => {
 //   done(null, user);
 // });
+export const isAuthenticated = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    let token;
+    if (req.cookies.jwt) {
+      token = req.cookies.jwt;
+    }
+    if (!token) {
+      throw new Error("OOPs, Firstly you have to logined in !!");
+    }
+    const decode = jwt.verify(token, process.env.JWT_SECRET) as jwt.JwtPayload;
+    console.log(decode);
+    const currentloginedUser = await User.findById(decode.id);
+    req.user = currentloginedUser;
+    next();
+  } catch (err) {
+    res.status(400).json({
+      status: "failed",
+      message: (err as Error).message,
+    });
+  }
+};

@@ -1,4 +1,9 @@
 import { Schema, model } from "mongoose";
+
+/**
+ * topics and tag should be array but we will take care of it from frontend side
+ * May be topics will not be array like -> try it to be in one topic only
+ */
 export interface IBookMark extends Document {
   title: string;
   link: string;

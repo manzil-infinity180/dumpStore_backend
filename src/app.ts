@@ -8,6 +8,8 @@ import passport from "passport";
 import { router as AuthRouter } from "./routers/authRoute.js";
 import { router as BookmarkRouter } from "./routers/bookmarkRoute.js";
 import { IUser } from "./models/userModel.js";
+import { sendCookiesAndToken } from "./utils/sendCookiesAndToken.js";
+import { isAuthenticated } from "./controllers/authController.js";
 
 app.use(CookieParser());
 app.use(bodyParser.json());
@@ -42,21 +44,13 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Server is Up and Running");
 });
 // login success router
-export function isAuthenticated(req: Request, res: Response, next: NextFunction) {
-  if (req.isAuthenticated()) {
-    console.log("hello");
-    return next();
-  }
-  res.redirect("/login");
-}
 
-app.get("/login/success", (req: Request, res: Response) => {
+app.get("/login/success", async (req: Request, res: Response) => {
   if (req.isAuthenticated() && req.user) {
     const user = req.user as IUser;
     console.log(req.user);
-    res.status(200).json({
-      status: "success",
-    });
+    await sendCookiesAndToken(user, res);
+    res.redirect("/");
   } else {
     res.redirect("/login");
   }
