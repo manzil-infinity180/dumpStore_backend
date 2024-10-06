@@ -133,7 +133,6 @@ export const isAuthenticated = async (
       throw new Error("OOPs, Firstly you have to logined in !!");
     }
     const decode = jwt.verify(token, process.env.JWT_SECRET) as jwt.JwtPayload;
-    console.log(decode);
     const currentloginedUser = await User.findById(decode.id);
     req.user = currentloginedUser;
     next();

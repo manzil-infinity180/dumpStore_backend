@@ -16,7 +16,7 @@ app.use(bodyParser.json());
 app.use(express.json());
 app.use(
   cors({
-    origin: "*",
+    origin: ["http://localhost:5173"],
     methods: ["GET,HEAD,PUT,PATCH,POST,DELETE"],
     credentials: true,
   })
@@ -50,7 +50,7 @@ app.get("/login/success", async (req: Request, res: Response) => {
     const user = req.user as IUser;
     console.log(req.user);
     await sendCookiesAndToken(user, res);
-    res.redirect("/");
+    res.redirect("http://localhost:5173/");
   } else {
     res.redirect("/login");
   }

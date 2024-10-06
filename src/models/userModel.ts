@@ -8,6 +8,7 @@ export interface IUser extends Document {
   photos?: string;
   provider: string;
   posts?: Schema.Types.ObjectId[];
+  topics?: string[];
 }
 
 const userSchema = new Schema<IUser>({
@@ -33,6 +34,11 @@ const userSchema = new Schema<IUser>({
     {
       type: Schema.Types.ObjectId,
       ref: "Bookmark",
+    },
+  ],
+  topics: [
+    {
+      type: String,
     },
   ],
 });

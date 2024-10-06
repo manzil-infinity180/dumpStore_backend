@@ -4,9 +4,41 @@ import mongoose, { Error } from "mongoose";
 import { type IUser, User } from "../models/userModel.js";
 import { UploadImageToCloudinary } from "../utils/UploadImages.js";
 
+const getBookMark = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const bookmark = await Bookmark.findById(req.params.id);
+    res.status(200).json({
+      status: "sucess",
+      message: "Bookmark Data Fetched",
+      data: bookmark,
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: "failed",
+      message: (err as Error).message,
+    });
+  }
+};
+const getMyProfile = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // @ts-ignore
+    const user = await User.findById({ _id: req.user._id }).populate("posts");
+    res.status(200).json({
+      status: "sucess",
+      message: "User Data Fetched",
+      data: user,
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: "failed",
+      message: (err as Error).message,
+    });
+  }
+};
 const createNewBookmark = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { title, link, tag } = req.body;
+    console.log(req.body);
     if (!title || !link || !tag) {
       throw new Error("Title, Link, Tag is compulsory fields");
     }
@@ -27,6 +59,18 @@ const createNewBookmark = async (req: Request, res: Response, next: NextFunction
     const user = await User.findById({ _id: req.user._id });
     // console.log("user");
     user.posts.push(bookmark._id);
+
+    if (req.body.topics) {
+      console.log(req.body.topics);
+      const result = user.topics.filter((el) => {
+        console.log(el);
+        return req.body.topic === el;
+      });
+      console.log(result);
+      if (!result) {
+        // user.topics.push(req.body.topics);
+      }
+    }
     await user.save();
     console.log(user);
     res.status(200).json({
@@ -41,16 +85,14 @@ const createNewBookmark = async (req: Request, res: Response, next: NextFunction
     });
   }
 };
-
-const updateBookmark = async (req: Request, res: Response, next: NextFunction) => {
+const getAllBookMark = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const Updatebookmark = await Bookmark.findByIdAndUpdate(
-      { _id: req.body.id },
-      req.body
-    );
+    //@ts-ignore
+    const allBookmark = await User.findById({ _id: req.user._id }).populate("posts");
     res.status(200).json({
       status: "sucess",
       message: "Updated Bookmark Data",
+      data: allBookmark.posts,
     });
   } catch (err) {
     res.status(400).json({
@@ -60,9 +102,80 @@ const updateBookmark = async (req: Request, res: Response, next: NextFunction) =
   }
 };
 
+const getBookmarkByTopic = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    //@ts-ignore
+    const allBookmark = await Bookmark.find({ topics: req.body.topics });
+    res.status(200).json({
+      status: "sucess",
+      message: "Updated Bookmark Data",
+      data: allBookmark,
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: "failed",
+      message: (err as Error).message,
+    });
+  }
+};
+// const getBookMarkByTags = async (req: Request, res: Response, next: NextFunction) => {
+//   try {
+//     //@ts-ignore
+//     const allBookmark = await Bookmark.find({ tags: req.body.tags });
+//     res.status(200).json({
+//       status: "sucess",
+//       message: "Updated Bookmark Data",
+//       data: allBookmark,
+//     });
+//   } catch (err) {
+//     res.status(400).json({
+//       status: "failed",
+//       message: (err as Error).message,
+//     });
+//   }
+// };
+const updateBookmark = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const Updatebookmark = await Bookmark.findByIdAndUpdate(
+      { _id: req.body.id },
+      req.body
+    );
+    console.log(req.body);
+    const x = await Bookmark.findById(req.body.id);
+    // @ts-ignore
+    const user = await User.findById({ _id: req.user._id });
+    // console.log("user");
+    console.log(req.body.topics.toLowerCase());
+    const { topics } = req.body;
+    if (topics as string) {
+      console.log(user.topics);
+      const result = user.topics.some((el) => {
+        return topics.toLowerCase() === el.toLowerCase();
+      });
+      console.log(result);
+      if (!result) {
+        user.topics.push(req.body.topics);
+        await user.save();
+      }
+    }
+
+    console.log(x);
+    res.status(200).json({
+      status: "sucess",
+      message: "Updated Bookmark Data",
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({
+      status: "failed",
+      message: (err as Error).message,
+    });
+  }
+};
+
 const deleteBookmark = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await Bookmark.findByIdAndDelete({ _id: req.body.id });
+    await Bookmark.findByIdAndDelete(req.params.id);
     res.status(200).json({
       status: "sucess",
       message: "Deleted Bookmark Data",
@@ -120,10 +233,17 @@ const uploadBookmarkImage = async (req: Request, res: Response, next: NextFuncti
   } catch (err) {}
 };
 
+// TODO : get bookmark by topic and set default as all
+// TODO : on selecting on any  tag fetch the data only for tag (get data by tag)
+
 export {
   createNewBookmark,
   updateBookmark,
   deleteBookmark,
   addBookmarkTopic,
   uploadBookmarkImage,
+  getAllBookMark,
+  getBookMark,
+  getBookmarkByTopic,
+  getMyProfile,
 };
