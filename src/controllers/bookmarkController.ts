@@ -104,6 +104,7 @@ const getAllBookMark = async (req: Request, res: Response, next: NextFunction) =
 
 const getBookmarkByTopic = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    console.log(req.body.topics);
     //@ts-ignore
     const allBookmark = await Bookmark.find({ topics: req.body.topics });
     res.status(200).json({

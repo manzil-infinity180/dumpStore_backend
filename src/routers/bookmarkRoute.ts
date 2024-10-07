@@ -16,7 +16,7 @@ import { UploadSingleImage } from "../utils/UploadImages.js";
 router.use(isAuthenticated);
 router.get("/get-bookmark/:id", getBookMark);
 router.get("/get-all-bookmark", getAllBookMark);
-router.get("/get-bookmark-by-topics", getBookmarkByTopic);
+router.post("/get-bookmark-by-topics", getBookmarkByTopic);
 router.get("/get-my-profile", getMyProfile);
 router.post("/create-bookmark", createNewBookmark);
 router.patch("/update-bookmark", updateBookmark);
