@@ -231,9 +231,50 @@ const uploadBookmarkImage = async (req: Request, res: Response, next: NextFuncti
       data: bookmark,
       newImage: bookmark.image,
     });
-  } catch (err) {}
+  } catch (err) {
+    res.status(400).json({
+      status: "failed",
+      message: (err as Error).message,
+    });
+  }
 };
 
+const searchBookmark = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { searchField } = req.body;
+    if (!searchField) {
+      throw new Error("Invalid Search Field");
+    }
+    const result: IBookMark[] = await Bookmark.aggregate([
+      {
+        $search: {
+          index: "default",
+          text: {
+            query: searchField,
+            // path: ["title", "topics", "tag", "link"],
+            fuzzy: { maxEdits: 1, prefixLength: 1, maxExpansions: 256 },
+            path: {
+              wildcard: "*",
+            },
+          },
+        },
+      },
+    ]);
+    console.log(result);
+
+    res.status(200).json({
+      status: "success",
+      message: "Uploaded Image to Cloudinary",
+      length: result.length,
+      data: result,
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: "failed",
+      message: (err as Error).message,
+    });
+  }
+};
 // TODO : get bookmark by topic and set default as all
 // TODO : on selecting on any  tag fetch the data only for tag (get data by tag)
 
@@ -247,4 +288,5 @@ export {
   getBookMark,
   getBookmarkByTopic,
   getMyProfile,
+  searchBookmark,
 };
