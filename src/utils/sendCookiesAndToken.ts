@@ -10,7 +10,7 @@ export const sendCookiesAndToken = async (user: IUser, res: Response) => {
   if (!user._id) throw new Error("user._id is not found for token");
   const token = signToken(user._id);
   // storing the token in cookie with the name 'jwt'
-  await res.cookie("jwt", token, {
+  res.cookie("jwt", token, {
     expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
     httpOnly: true,
     // sameSite: process.env.NODE_ENV === "Development" ? "lax" : "none",

@@ -12,13 +12,14 @@ import {
   updateBookmark,
   uploadBookmarkImage,
 } from "../controllers/bookmarkController.js";
-import { isAuthenticated } from "../controllers/authController.js";
+import { isAuthenticated, logout } from "../controllers/authController.js";
 import { UploadSingleImage } from "../utils/UploadImages.js";
 router.use(isAuthenticated);
 /** GET  */
 router.get("/get-bookmark/:id", getBookMark);
 router.get("/get-all-bookmark", getAllBookMark);
 router.get("/get-my-profile", getMyProfile);
+router.get("/logout", logout);
 /** POST */
 router.post("/get-bookmark-by-topics", getBookmarkByTopic);
 router.post("/create-bookmark", createNewBookmark);

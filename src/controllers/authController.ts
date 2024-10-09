@@ -143,3 +143,27 @@ export const isAuthenticated = async (
     });
   }
 };
+
+export const logout = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      throw new Error("Something went wrong");
+    }
+    res.clearCookie("jwt");
+    console.log("hello");
+    console.log(req.cookies.jwt);
+    req.logOut((err) => {
+      if (err) return next(err);
+      // res.redirect("/");
+    });
+    res.status(200).json({
+      status: "success",
+      message: "Logout Successfully",
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: "failed",
+      message: (err as Error).message,
+    });
+  }
+};
