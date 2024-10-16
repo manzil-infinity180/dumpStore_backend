@@ -70,7 +70,12 @@ passport.use(
     }
   )
 );
-
+interface GitHubEmail {
+  email: string;
+  primary: boolean;
+  verified: boolean;
+  visibility: string | null;
+}
 // Github
 passport.use(
   new GithubStrategy(
@@ -85,7 +90,7 @@ passport.use(
       profile: any,
       done: (error: any, user?: any) => void
     ) => {
-      const user: Pick<IUser, "id" | "displayName" | "emails" | "photos" | "provider"> = {
+      let user: Pick<IUser, "id" | "displayName" | "emails" | "photos" | "provider"> = {
         id: profile.id,
         displayName: profile.displayName || profile.username,
         emails: profile._json.email,
@@ -93,6 +98,24 @@ passport.use(
         provider: "github",
       };
 
+      if (user.emails === null) {
+        const response = await fetch("https://api.github.com/user/emails", {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "User-Agent": "your-app-name",
+          },
+        });
+
+        const emails: GitHubEmail[] = await response.json();
+        console.log(emails);
+        const primaryEmail = emails.find((email) => email.primary);
+        console.log(primaryEmail);
+        if (primaryEmail) {
+          user.emails = primaryEmail.email;
+        } else {
+          throw new Error("Something went work with the primary email github");
+        }
+      }
       const alreadyExistedUser = await User.findOne({
         emails: user.emails,
       });
