@@ -62,13 +62,10 @@ const createNewBookmark = async (req: Request, res: Response, next: NextFunction
 
     if (req.body.topics) {
       console.log(req.body.topics);
-      const result = user.topics.filter((el) => {
-        console.log(el);
-        return req.body.topic === el;
-      });
+      const result = user.topics.find((el) => req.body.topic === el);
       console.log(result);
       if (!result) {
-        // user.topics.push(req.body.topics);
+        user.topics.push(req.body.topics);
       }
     }
     await user.save();
@@ -146,17 +143,18 @@ const updateBookmark = async (req: Request, res: Response, next: NextFunction) =
     // @ts-ignore
     const user = await User.findById({ _id: req.user._id });
     // console.log("user");
-    console.log(req.body.topics.toLowerCase());
-    const { topics } = req.body;
-    if (topics as string) {
-      console.log(user.topics);
-      const result = user.topics.some((el) => {
-        return topics.toLowerCase() === el.toLowerCase();
-      });
-      console.log(result);
-      if (!result) {
-        user.topics.push(req.body.topics);
-        await user.save();
+    if (req.body.topics) {
+      const { topics } = req.body;
+      if (topics as string) {
+        console.log(user.topics);
+        const result = user.topics.some((el) => {
+          return topics.toLowerCase() === el.toLowerCase();
+        });
+        console.log(result);
+        if (!result) {
+          user.topics.push(req.body.topics);
+          await user.save();
+        }
       }
     }
 
@@ -177,6 +175,36 @@ const updateBookmark = async (req: Request, res: Response, next: NextFunction) =
 const deleteBookmark = async (req: Request, res: Response, next: NextFunction) => {
   try {
     await Bookmark.findByIdAndDelete(req.params.id);
+    res.status(200).json({
+      status: "sucess",
+      message: "Deleted Bookmark Data",
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: "failed",
+      message: (err as Error).message,
+    });
+  }
+};
+const deleteAllBookmarkByTopics = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { topics } = req.body;
+    await Bookmark.deleteMany({ topics });
+    //@ts-ignore
+    const user = await User.findById({ _id: req.user._id });
+    let alltopics = user.topics;
+    if (alltopics.length) {
+      const filterTopics = alltopics.filter(
+        (el) => el.toLowerCase() !== topics.toLowerCase()
+      );
+      user.topics = filterTopics;
+      await user.save();
+    }
+
     res.status(200).json({
       status: "sucess",
       message: "Deleted Bookmark Data",
@@ -275,6 +303,7 @@ const searchBookmark = async (req: Request, res: Response, next: NextFunction) =
     });
   }
 };
+
 // TODO : get bookmark by topic and set default as all
 // TODO : on selecting on any  tag fetch the data only for tag (get data by tag)
 
@@ -289,4 +318,5 @@ export {
   getBookmarkByTopic,
   getMyProfile,
   searchBookmark,
+  deleteAllBookmarkByTopics,
 };

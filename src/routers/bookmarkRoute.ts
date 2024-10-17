@@ -3,6 +3,7 @@ const router = Router();
 import {
   addBookmarkTopic,
   createNewBookmark,
+  deleteAllBookmarkByTopics,
   deleteBookmark,
   getAllBookMark,
   getBookMark,
@@ -30,5 +31,6 @@ router.patch("/add-bookmark-topic", addBookmarkTopic);
 router.patch("/upload-bookmark-image", UploadSingleImage, uploadBookmarkImage);
 /** DELETE */
 router.delete("/delete-bookmark/:id", deleteBookmark);
+router.delete("/delete-bookmark-by-topics", deleteAllBookmarkByTopics);
 
 export { router };
