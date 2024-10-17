@@ -12,6 +12,7 @@ import {
   searchBookmark,
   updateBookmark,
   uploadBookmarkImage,
+  uploadImageToCloud,
 } from "../controllers/bookmarkController.js";
 import { isAuthenticated, logout } from "../controllers/authController.js";
 import { UploadSingleImage } from "../utils/UploadImages.js";
@@ -29,6 +30,7 @@ router.post("/search-bookmark", searchBookmark);
 router.patch("/update-bookmark", updateBookmark);
 router.patch("/add-bookmark-topic", addBookmarkTopic);
 router.patch("/upload-bookmark-image", UploadSingleImage, uploadBookmarkImage);
+router.post("/upload-image-to-cloud", UploadSingleImage, uploadImageToCloud);
 /** DELETE */
 router.delete("/delete-bookmark/:id", deleteBookmark);
 router.delete("/delete-bookmark-by-topics", deleteAllBookmarkByTopics);

@@ -45,7 +45,10 @@ const createNewBookmark = async (req: Request, res: Response, next: NextFunction
     // TODO : Image Upload Implementation and try to fix the image size(or pixel) before uploading to cloudinary or any other platform
     const domain = new URL(link).hostname;
     if (!process.env.LOGO_FAVICON_URL) throw new Error("Favicon URl is invalid");
-    const favicon = process.env.LOGO_FAVICON_URL.replace("<DOMAIN>", domain);
+    let favicon = process.env.LOGO_FAVICON_URL.replace("<DOMAIN>", domain);
+    if (req.body.image.length) {
+      favicon = req.body.image;
+    }
     // TODO : if req.file is existed (manual logo) then you need to omit/override the image
     const bookmarkBody: IBookMark = {
       title,
@@ -134,6 +137,18 @@ const getBookmarkByTopic = async (req: Request, res: Response, next: NextFunctio
 // };
 const updateBookmark = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    // const { isChecked, image } = req.body;
+    console.log(req.body);
+    const { isChecked, image, topics } = req.body;
+    console.log(isChecked);
+    if (isChecked && isChecked.toLowerCase() === "yes" && image.includes("cloudinary")) {
+      const domain = new URL(req.body.link).hostname;
+      if (!process.env.LOGO_FAVICON_URL) throw new Error("Favicon URl is invalid");
+      const favicon = process.env.LOGO_FAVICON_URL.replace("<DOMAIN>", domain);
+      req.body.image = favicon;
+      console.log(req.body);
+    }
+
     const Updatebookmark = await Bookmark.findByIdAndUpdate(
       { _id: req.body.id },
       req.body
@@ -143,18 +158,16 @@ const updateBookmark = async (req: Request, res: Response, next: NextFunction) =
     // @ts-ignore
     const user = await User.findById({ _id: req.user._id });
     // console.log("user");
-    if (req.body.topics) {
-      const { topics } = req.body;
-      if (topics as string) {
-        console.log(user.topics);
-        const result = user.topics.some((el) => {
-          return topics.toLowerCase() === el.toLowerCase();
-        });
-        console.log(result);
-        if (!result) {
-          user.topics.push(req.body.topics);
-          await user.save();
-        }
+    if (topics.length) {
+      console.log(topics);
+      console.log(user.topics);
+      const result = user.topics.some((el) => {
+        return topics.toLowerCase() === el.toLowerCase();
+      });
+      console.log(result);
+      if (!result) {
+        user.topics.push(req.body.topics);
+        await user.save();
       }
     }
 
@@ -267,6 +280,28 @@ const uploadBookmarkImage = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
+const uploadImageToCloud = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.file) {
+      throw new Error("No file found");
+    }
+    const result = await UploadImageToCloudinary(req, res, next);
+    if (result.length === 0 && !result.secure_url) {
+      throw new Error("Failed to Upload Image");
+    }
+    console.log(result);
+    res.status(200).json({
+      status: "success",
+      data: { imageUrl: result.secure_url },
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: "failed",
+      message: (err as Error).message,
+    });
+  }
+};
+
 const searchBookmark = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { searchField } = req.body;
@@ -319,4 +354,5 @@ export {
   getMyProfile,
   searchBookmark,
   deleteAllBookmarkByTopics,
+  uploadImageToCloud,
 };

@@ -25,9 +25,9 @@ export const UploadImageToCloudinary = async (
     if (!file) {
       throw new Error("No file founded!");
     }
-    const imageSize = 3 * 1024 * 1024;
+    const imageSize = 10 * 1024 * 1024;
     if (imageSize < req.file.size) {
-      throw new Error("Your file must be less than 3 MB");
+      throw new Error("Your file must be less than 10 MB");
     }
     if (!req.file || req.file.fieldname !== "photo") {
       throw new Error("Something Goes wrong with req.file.fieldname, it should be photo");
