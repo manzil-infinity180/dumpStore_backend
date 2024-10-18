@@ -1,6 +1,10 @@
+import dotenv from "dotenv";
+dotenv.config();
 import { OpenAI } from "openai";
 import * as cheerio from "cheerio";
 import { Request, Response } from "express";
+import puppeteer from "puppeteer";
+import nlp from "compromise";
 const client = new OpenAI({
   apiKey: process.env["OPENAI_API_KEY"],
 });
@@ -14,13 +18,25 @@ async function fetchPageContent(url: string) {
   const data = await response.text();
   const $ = cheerio.load(data);
 
-  let textContent = $("body").text();
+  let textContent = $("p").text();
   textContent = textContent.replace(/\s+/g, " ").trim(); // extra space
-  const words = textContent.split(" ").slice(0, 125).join(" ");
+  const words = textContent.slice(0, 500);
   console.log(words);
   return words;
 }
-
+async function fetchPageContentUsingPuppeeter(url: string) {
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+  await page.goto(url, { waitUntil: "domcontentloaded" });
+  await page.waitForSelector("body");
+  const content = await page.evaluate(() => {
+    return document.body.innerText;
+  });
+  await browser.close();
+  console.log(content.length);
+  // return content.toString().slice(0, 500);
+  return content;
+}
 // generate tags and summary
 async function generateTagsAndSummary(pageUrl: string) {
   const pageContent = await fetchPageContent(pageUrl);
@@ -86,16 +102,32 @@ export const genereatedTagNsummaryByAI = async (req: Request, res: Response) => 
     });
   }
 };
-
+function extractFiveTags(text: string) {
+  if (!(text.length > 0)) {
+    throw new Error("Did not get Any text here :(");
+  }
+  const doc = nlp(text);
+  const tags: Array<String> = doc.nouns().out("array");
+  console.log(tags);
+  const lowerCaseTags = tags.map((el) => el.toLowerCase());
+  const filtertags = lowerCaseTags.filter((el) => el.length <= 20 && el.length > 5);
+  const uniqueTags: Array<String> = [...new Set(filtertags)];
+  return uniqueTags;
+}
 export const generateBybart = async (req: Request, res: Response) => {
   const { url } = req.body;
   try {
     const pageContent = await fetchPageContent(url);
+    // const pageContent = await fetchPageContentUsingPuppeeter(url);
+    console.log(pageContent.length);
+    // if (pageContent.length > 550) {
+    //   throw new Error("Data Set is too large");
+    // }
     const response = await fetch(
       "https://api-inference.huggingface.co/models/facebook/bart-large-cnn",
       {
         headers: {
-          Authorization: "Bearer ",
+          Authorization: `Bearer ${process.env.HUGGING_FACE_BART_TOKEN}`,
           "Content-Type": "application/json",
         },
         method: "POST",
@@ -103,13 +135,24 @@ export const generateBybart = async (req: Request, res: Response) => {
       }
     );
     const result = await response.json();
+    const filterResult = result[0].summary_text;
+    const tags = extractFiveTags(filterResult);
+    // let tags = [];
+    // if (result) {
+    //   console.log(result);
+    //   tags = extractFiveTags(result);
+    // }
+
     res.status(200).json({
       status: "success",
       data: {
         result,
+        tags,
+        content: pageContent,
       },
     });
   } catch (err) {
+    console.log(err);
     res.status(400).json({
       status: "failed",
       message: (err as Error).message,
