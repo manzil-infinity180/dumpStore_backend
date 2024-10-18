@@ -4,6 +4,7 @@ import { OpenAI } from "openai";
 import * as cheerio from "cheerio";
 import { Request, Response } from "express";
 import puppeteer from "puppeteer";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import nlp from "compromise";
 const client = new OpenAI({
   apiKey: process.env["OPENAI_API_KEY"],
@@ -135,7 +136,7 @@ export const generateBybart = async (req: Request, res: Response) => {
       }
     );
     const result = await response.json();
-    const filterResult = result[0].summary_text;
+    const filterResult = result[0]?.summary_text;
     const tags = extractFiveTags(filterResult);
     // let tags = [];
     // if (result) {
@@ -159,6 +160,35 @@ export const generateBybart = async (req: Request, res: Response) => {
     });
   }
 };
+export async function generateByGemini(req: Request, res: Response) {
+  try {
+    const { url } = req.body;
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    const prompt = `Summarize the key content of the webpage found at ${url}  in 70 words in one paragraph. And 5 relevant tags in array in formate **Tags:** []`;
+
+    const result = await model.generateContent(prompt);
+    const data = result.response.text().replace(/\\/g, "").replace(/\n/g, "");
+    const summary = data.slice(0, data.indexOf("**Tags:**"));
+    console.log(data.indexOf("["));
+    const tags = data.slice(data.indexOf("["), data.indexOf("]") + 1);
+    console.log(data);
+    res.status(200).json({
+      status: "success",
+      data: {
+        summary,
+        tags,
+      },
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({
+      status: "failed",
+      message: (err as Error).message,
+    });
+  }
+}
 
 async function query(pageUrl: string) {
   const pageContent = await fetchPageContent(pageUrl);
