@@ -46,7 +46,7 @@ const createNewBookmark = async (req: Request, res: Response, next: NextFunction
     const domain = new URL(link).hostname;
     if (!process.env.LOGO_FAVICON_URL) throw new Error("Favicon URl is invalid");
     let favicon = process.env.LOGO_FAVICON_URL.replace("<DOMAIN>", domain);
-    if (req.body.image.length) {
+    if (req.body.image?.length > 0) {
       favicon = req.body.image;
     }
     // TODO : if req.file is existed (manual logo) then you need to omit/override the image

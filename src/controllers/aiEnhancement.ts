@@ -166,18 +166,26 @@ export async function generateByGemini(req: Request, res: Response) {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const prompt = `Summarize the key content of the webpage found at ${url}  in 70 words in one paragraph. And 5 relevant tags in array in formate **Tags:** []`;
+    const prompt = `Summarize the key content of the webpage found at ${url}  in 70 words in one paragraph. Give the output in format like Title: Content, Summary: Content, Tags:[Content]`;
 
     const result = await model.generateContent(prompt);
     const data = result.response.text().replace(/\\/g, "").replace(/\n/g, "");
-    const summary = data.slice(0, data.indexOf("**Tags:**"));
+    const summary = data.slice(
+      data.indexOf("Summary:") + "Summary: ".length,
+      data.indexOf("Tags:")
+    );
+    const title = data.slice(data.indexOf(":") + 2, data.indexOf("Summary"));
     console.log(data.indexOf("["));
-    const tags = data.slice(data.indexOf("["), data.indexOf("]") + 1);
+    const tags = data
+      .slice(data.indexOf("[") + 1, data.indexOf("]"))
+      .replace(/"/g, "")
+      .split(", ");
     console.log(data);
     res.status(200).json({
       status: "success",
       data: {
         summary,
+        title,
         tags,
       },
     });
