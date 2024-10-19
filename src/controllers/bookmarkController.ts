@@ -195,7 +195,10 @@ const updateBookmarkOrder = async (req: Request, res: Response) => {
     for (let item of updatedOrder) {
       await Bookmark.findByIdAndUpdate(item._id, { position: item.position });
     }
-    res.status(200).send("Order updated successfully");
+    res.status(200).json({
+      status: "success",
+      data: "Order Successfully Saved",
+    });
   } catch (error) {
     console.error("Error updating order:", error);
     res.status(500).send("Failed to update order");
