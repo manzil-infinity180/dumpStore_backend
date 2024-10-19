@@ -138,12 +138,6 @@ export const generateBybart = async (req: Request, res: Response) => {
     const result = await response.json();
     const filterResult = result[0]?.summary_text;
     const tags = extractFiveTags(filterResult);
-    // let tags = [];
-    // if (result) {
-    //   console.log(result);
-    //   tags = extractFiveTags(result);
-    // }
-
     res.status(200).json({
       status: "success",
       data: {
@@ -166,7 +160,7 @@ export async function generateByGemini(req: Request, res: Response) {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const prompt = `Summarize the key content of the webpage found at ${url}  in 70 words in one paragraph. Give the output in format like Title: Content, Summary: Content, Tags:[Content]`;
+    const prompt = `Summarize the key content of the webpage found at ${url}  in 70 words in one paragraph. Give the output in format like Title: Content, Summary: Content, Tags:[5 Tags Only]`;
 
     const result = await model.generateContent(prompt);
     const data = result.response.text().replace(/\\/g, "").replace(/\n/g, "");
@@ -196,21 +190,4 @@ export async function generateByGemini(req: Request, res: Response) {
       message: (err as Error).message,
     });
   }
-}
-
-async function query(pageUrl: string) {
-  const pageContent = await fetchPageContent(pageUrl);
-  const response = await fetch(
-    "https://api-inference.huggingface.co/models/facebook/bart-large-cnn",
-    {
-      headers: {
-        Authorization: "Bearer hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-        "Content-Type": "application/json",
-      },
-      method: "POST",
-      body: JSON.stringify(pageContent),
-    }
-  );
-  const result = await response.json();
-  return result;
 }
