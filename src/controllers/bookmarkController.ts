@@ -46,7 +46,7 @@ const createNewBookmark = async (req: Request, res: Response, next: NextFunction
     const domain = new URL(link).hostname;
     if (!process.env.LOGO_FAVICON_URL) throw new Error("Favicon URl is invalid");
     let favicon = process.env.LOGO_FAVICON_URL.replace("<DOMAIN>", domain);
-    if (req.body.image?.length) {
+    if (req.body.image?.length > 0) {
       favicon = req.body.image;
     }
     // @ts-ignore
@@ -195,7 +195,10 @@ const updateBookmarkOrder = async (req: Request, res: Response) => {
     for (let item of updatedOrder) {
       await Bookmark.findByIdAndUpdate(item._id, { position: item.position });
     }
-    res.status(200).send("Order updated successfully");
+    res.status(200).json({
+      status: "success",
+      data: "Order Successfully Saved",
+    });
   } catch (error) {
     console.error("Error updating order:", error);
     res.status(500).send("Failed to update order");
