@@ -49,17 +49,20 @@ const createNewBookmark = async (req: Request, res: Response, next: NextFunction
     if (req.body.image?.length > 0) {
       favicon = req.body.image;
     }
+    // @ts-ignore
+    const user = await User.findById({ _id: req.user._id });
+    console.log(user.posts);
     // TODO : if req.file is existed (manual logo) then you need to omit/override the image
     const bookmarkBody: IBookMark = {
       title,
       link,
       tag,
       image: favicon,
+      position: user.posts?.length + 1,
       ...req.body,
     };
     const bookmark = await Bookmark.create(bookmarkBody);
-    // @ts-ignore
-    const user = await User.findById({ _id: req.user._id });
+
     // console.log("user");
     user.posts.push(bookmark._id);
 
@@ -185,9 +188,32 @@ const updateBookmark = async (req: Request, res: Response, next: NextFunction) =
   }
 };
 
+const updateBookmarkOrder = async (req: Request, res: Response) => {
+  const { updatedOrder } = req.body;
+  console.log(updatedOrder);
+  try {
+    for (let item of updatedOrder) {
+      await Bookmark.findByIdAndUpdate(item._id, { position: item.position });
+    }
+    res.status(200).send("Order updated successfully");
+  } catch (error) {
+    console.error("Error updating order:", error);
+    res.status(500).send("Failed to update order");
+  }
+};
+
 const deleteBookmark = async (req: Request, res: Response, next: NextFunction) => {
   try {
     await Bookmark.findByIdAndDelete(req.params.id);
+    //@ts-ignore
+    const user = await User.findById({ _id: req.user._id });
+    //@ts-ignore
+    const filterOrder = user.posts.filter((el) => !el._id.equals(req.params.id));
+    let newpost: Array<mongoose.Schema.Types.ObjectId> = [];
+    //@ts-ignore
+    filterOrder.map((el) => newpost.push(el._id));
+    user.posts = newpost;
+    user.save();
     res.status(200).json({
       status: "sucess",
       message: "Deleted Bookmark Data",
@@ -355,4 +381,5 @@ export {
   searchBookmark,
   deleteAllBookmarkByTopics,
   uploadImageToCloud,
+  updateBookmarkOrder,
 };
