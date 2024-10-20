@@ -68,7 +68,10 @@ const createNewBookmark = async (req: Request, res: Response, next: NextFunction
 
     if (req.body.topics) {
       console.log(req.body.topics);
-      const result = user.topics.find((el) => req.body.topic === el);
+      console.log(typeof req.body.topics);
+      const result = user.topics.find(
+        (el) => req.body.topics.toLowerCase() == el.toLowerCase()
+      );
       console.log(result);
       if (!result) {
         user.topics.push(req.body.topics);
@@ -193,7 +196,9 @@ const updateBookmarkOrder = async (req: Request, res: Response) => {
   console.log(updatedOrder);
   try {
     for (let item of updatedOrder) {
-      await Bookmark.findByIdAndUpdate(item._id, { position: item.position });
+      const { _id: _, ...rest } = item;
+      console.log(rest);
+      await Bookmark.findByIdAndUpdate(item._id, rest);
     }
     res.status(200).json({
       status: "success",

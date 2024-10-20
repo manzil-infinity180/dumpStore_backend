@@ -160,7 +160,7 @@ export async function generateByGemini(req: Request, res: Response) {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const prompt = `Summarize the key content of the webpage found at ${url}  in 70 words in one paragraph. Give the output in format like Title: Content, Summary: Content, Tags:[5 Tags Only]`;
+    const prompt = `Summarize the key content of the webpage found at ${url}  in 30 to 40 words in one paragraph. Give the output in format like Title: Content, Summary: Content, Tags:[5 Tags Only]`;
 
     const result = await model.generateContent(prompt);
     const data = result.response.text().replace(/\\/g, "").replace(/\n/g, "");
