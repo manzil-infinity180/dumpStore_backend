@@ -14,6 +14,8 @@ export interface IBookMark extends Document {
   createdAt: Date;
   updatedAt: Date;
   image?: string;
+  position?: number;
+  topics_position?: number;
 }
 const bookMarkSchema = new Schema<IBookMark>(
   {
@@ -35,6 +37,12 @@ const bookMarkSchema = new Schema<IBookMark>(
     },
     topics: {
       type: String, // some default topic and then user will create their own topics
+    },
+    position: {
+      type: Number,
+    },
+    topics_position: {
+      type: Number,
     },
     image: {
       type: String,

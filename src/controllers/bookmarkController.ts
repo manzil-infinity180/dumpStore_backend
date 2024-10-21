@@ -45,30 +45,36 @@ const createNewBookmark = async (req: Request, res: Response, next: NextFunction
     // TODO : Image Upload Implementation and try to fix the image size(or pixel) before uploading to cloudinary or any other platform
     const domain = new URL(link).hostname;
     if (!process.env.LOGO_FAVICON_URL) throw new Error("Favicon URl is invalid");
-    const favicon = process.env.LOGO_FAVICON_URL.replace("<DOMAIN>", domain);
+    let favicon = process.env.LOGO_FAVICON_URL.replace("<DOMAIN>", domain);
+    if (req.body.image?.length > 0) {
+      favicon = req.body.image;
+    }
+    // @ts-ignore
+    const user = await User.findById({ _id: req.user._id });
+    console.log(user.posts);
     // TODO : if req.file is existed (manual logo) then you need to omit/override the image
     const bookmarkBody: IBookMark = {
       title,
       link,
       tag,
       image: favicon,
+      position: user.posts?.length + 1,
       ...req.body,
     };
     const bookmark = await Bookmark.create(bookmarkBody);
-    // @ts-ignore
-    const user = await User.findById({ _id: req.user._id });
+
     // console.log("user");
     user.posts.push(bookmark._id);
 
     if (req.body.topics) {
       console.log(req.body.topics);
-      const result = user.topics.filter((el) => {
-        console.log(el);
-        return req.body.topic === el;
-      });
+      console.log(typeof req.body.topics);
+      const result = user.topics.find(
+        (el) => req.body.topics.toLowerCase() == el.toLowerCase()
+      );
       console.log(result);
       if (!result) {
-        // user.topics.push(req.body.topics);
+        user.topics.push(req.body.topics);
       }
     }
     await user.save();
@@ -137,6 +143,18 @@ const getBookmarkByTopic = async (req: Request, res: Response, next: NextFunctio
 // };
 const updateBookmark = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    // const { isChecked, image } = req.body;
+    console.log(req.body);
+    const { isChecked, image, topics } = req.body;
+    console.log(isChecked);
+    if (isChecked && isChecked.toLowerCase() === "yes" && image.includes("cloudinary")) {
+      const domain = new URL(req.body.link).hostname;
+      if (!process.env.LOGO_FAVICON_URL) throw new Error("Favicon URl is invalid");
+      const favicon = process.env.LOGO_FAVICON_URL.replace("<DOMAIN>", domain);
+      req.body.image = favicon;
+      console.log(req.body);
+    }
+
     const Updatebookmark = await Bookmark.findByIdAndUpdate(
       { _id: req.body.id },
       req.body
@@ -146,9 +164,8 @@ const updateBookmark = async (req: Request, res: Response, next: NextFunction) =
     // @ts-ignore
     const user = await User.findById({ _id: req.user._id });
     // console.log("user");
-    console.log(req.body.topics.toLowerCase());
-    const { topics } = req.body;
-    if (topics as string) {
+    if (topics !== undefined && topics.length) {
+      console.log(topics);
       console.log(user.topics);
       const result = user.topics.some((el) => {
         return topics.toLowerCase() === el.toLowerCase();
@@ -174,9 +191,67 @@ const updateBookmark = async (req: Request, res: Response, next: NextFunction) =
   }
 };
 
+const updateBookmarkOrder = async (req: Request, res: Response) => {
+  const { updatedOrder } = req.body;
+  console.log(updatedOrder);
+  try {
+    for (let item of updatedOrder) {
+      const { _id: _, ...rest } = item;
+      console.log(rest);
+      await Bookmark.findByIdAndUpdate(item._id, rest);
+    }
+    res.status(200).json({
+      status: "success",
+      data: "Order Successfully Saved",
+    });
+  } catch (error) {
+    console.error("Error updating order:", error);
+    res.status(500).send("Failed to update order");
+  }
+};
+
 const deleteBookmark = async (req: Request, res: Response, next: NextFunction) => {
   try {
     await Bookmark.findByIdAndDelete(req.params.id);
+    //@ts-ignore
+    const user = await User.findById({ _id: req.user._id });
+    //@ts-ignore
+    const filterOrder = user.posts.filter((el) => !el._id.equals(req.params.id));
+    let newpost: Array<mongoose.Schema.Types.ObjectId> = [];
+    //@ts-ignore
+    filterOrder.map((el) => newpost.push(el._id));
+    user.posts = newpost;
+    user.save();
+    res.status(200).json({
+      status: "sucess",
+      message: "Deleted Bookmark Data",
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: "failed",
+      message: (err as Error).message,
+    });
+  }
+};
+const deleteAllBookmarkByTopics = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { topics } = req.body;
+    await Bookmark.deleteMany({ topics });
+    //@ts-ignore
+    const user = await User.findById({ _id: req.user._id });
+    let alltopics = user.topics;
+    if (alltopics.length) {
+      const filterTopics = alltopics.filter(
+        (el) => el.toLowerCase() !== topics.toLowerCase()
+      );
+      user.topics = filterTopics;
+      await user.save();
+    }
+
     res.status(200).json({
       status: "sucess",
       message: "Deleted Bookmark Data",
@@ -239,6 +314,28 @@ const uploadBookmarkImage = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
+const uploadImageToCloud = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.file) {
+      throw new Error("No file found");
+    }
+    const result = await UploadImageToCloudinary(req, res, next);
+    if (result.length === 0 && !result.secure_url) {
+      throw new Error("Failed to Upload Image");
+    }
+    console.log(result);
+    res.status(200).json({
+      status: "success",
+      data: { imageUrl: result.secure_url },
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: "failed",
+      message: (err as Error).message,
+    });
+  }
+};
+
 const searchBookmark = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { searchField } = req.body;
@@ -275,6 +372,7 @@ const searchBookmark = async (req: Request, res: Response, next: NextFunction) =
     });
   }
 };
+
 // TODO : get bookmark by topic and set default as all
 // TODO : on selecting on any  tag fetch the data only for tag (get data by tag)
 
@@ -289,4 +387,7 @@ export {
   getBookmarkByTopic,
   getMyProfile,
   searchBookmark,
+  deleteAllBookmarkByTopics,
+  uploadImageToCloud,
+  updateBookmarkOrder,
 };
