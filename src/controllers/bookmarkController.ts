@@ -164,7 +164,7 @@ const updateBookmark = async (req: Request, res: Response, next: NextFunction) =
     // @ts-ignore
     const user = await User.findById({ _id: req.user._id });
     // console.log("user");
-    if (topics.length) {
+    if (topics !== undefined && topics.length) {
       console.log(topics);
       console.log(user.topics);
       const result = user.topics.some((el) => {
