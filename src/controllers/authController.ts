@@ -7,6 +7,9 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as GithubStrategy } from "passport-github2";
 import { IUser, User } from "../models/userModel.js";
 import mongoose from "mongoose";
+import { sendEmail } from "../utils/sendEmail.js";
+import { connectAndSendMessage } from "../utils/queuqe.js";
+import { connectAndReceive } from "../utils/consumer.js";
 
 // Passport serialization
 passport.serializeUser(function (user, cb) {
@@ -60,12 +63,19 @@ passport.use(
       const alreadyExistedUser = await User.findOne({
         emails: user.emails,
       });
+      // sending email
+      const options = {
+        email: user.emails,
+        subject: "Login SUccess",
+      };
       if (alreadyExistedUser) {
         return done(null, alreadyExistedUser);
       }
+      await connectAndSendMessage(options);
       //   TODO : Check is _id field is required ?
       const newUser = new User(user);
       await newUser.save();
+
       return done(null, newUser);
     }
   )
@@ -107,7 +117,7 @@ passport.use(
         });
 
         const emails: GitHubEmail[] = await response.json();
-        console.log(emails);
+        // console.log(emails);
         const primaryEmail = emails.find((email) => email.primary);
         console.log(primaryEmail);
         if (primaryEmail) {
@@ -130,18 +140,6 @@ passport.use(
     }
   )
 );
-
-/**
- * User interface we defined and the Express.User type expected by Passport.
- * In the strategy callbacks, we've updated the done function's type to explicitly use Express.User.
- */
-// passport.serializeUser((user, done) => {
-//   done(null, user);
-// });
-
-// passport.deserializeUser((user: Express.User ,done) => {
-//   done(null, user);
-// });
 export const isAuthenticated = async (
   req: Request,
   res: Response,
