@@ -7,6 +7,7 @@ import session from "express-session";
 import passport from "passport";
 import { router as AuthRouter } from "./routers/authRoute.js";
 import { router as BookmarkRouter } from "./routers/bookmarkRoute.js";
+import { router as PaymentRouter } from "./routers/paymentRoute.js";
 import { router as AIRouter } from "./routers/openSourceAIRoute.js";
 import { IUser } from "./models/userModel.js";
 import { sendCookiesAndToken } from "./utils/sendCookiesAndToken.js";
@@ -45,6 +46,7 @@ app.use(
 app.use(passport.authenticate("session"));
 app.use("/auth", AuthRouter);
 app.use("/api", BookmarkRouter);
+app.use("/payment", PaymentRouter);
 app.use("/ai", AIRouter);
 app.get("/", (req: Request, res: Response) => {
   res.send("Server is Up and Running");
