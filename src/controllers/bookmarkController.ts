@@ -58,6 +58,7 @@ const createNewBookmark = async (req: Request, res: Response, next: NextFunction
       link,
       tag,
       image: favicon,
+      user_id: user.id,
       position: user.posts?.length + 1,
       ...req.body,
     };
@@ -111,8 +112,11 @@ const getAllBookMark = async (req: Request, res: Response, next: NextFunction) =
 const getBookmarkByTopic = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log(req.body.topics);
-    //@ts-ignore
-    const allBookmark = await Bookmark.find({ topics: req.body.topics });
+    const user = await User.findById(req.user);
+    const allBookmark = await Bookmark.find({
+      topics: req.body.topics,
+      user_id: user.id,
+    });
     res.status(200).json({
       status: "sucess",
       message: "Updated Bookmark Data",
@@ -240,9 +244,10 @@ const deleteAllBookmarkByTopics = async (
 ) => {
   try {
     const { topics } = req.body;
-    await Bookmark.deleteMany({ topics });
+    const user = await User.findById(req.user);
+    await Bookmark.deleteMany({ topics, user_id: user.id });
     //@ts-ignore
-    const user = await User.findById({ _id: req.user._id });
+    // const user = await User.findById({ _id: req.user._id });
     let alltopics = user.topics;
     if (alltopics.length) {
       const filterTopics = alltopics.filter(
@@ -388,19 +393,6 @@ const getAllChromeBookmark = async (req: Request, res: Response, next: NextFunct
     }
     const $ = cheerio.load(fileRead);
     const user = await User.findById(req.user);
-    /**
- * _id: mongoose.Schema.Types.ObjectId;
-  title: string;
-  link: string;
-  description?: string;
-  tag: string;
-  topics?: string; // presently i perfer to go with optional
-  createdAt: Date;
-  updatedAt: Date;
-  image?: string;
-  position?: number;
-  topics_position?: number;
- */
     const bookmarks: Partial<IBookMark>[] = [];
     let position = user.posts.length + 1;
     $("a").each((i, elem) => {
@@ -417,12 +409,13 @@ const getAllChromeBookmark = async (req: Request, res: Response, next: NextFunct
         image,
         position: position + i,
         topics_position: i,
+        user_id: user.id,
       };
 
       bookmarks.push(bookmark_object);
     });
 
-    console.log(bookmarks.slice(0, 5));
+    // console.log(bookmarks.slice(0, 5));
     const uploadBookmark = await Bookmark.insertMany(bookmarks);
     console.log(uploadBookmark);
     if (!uploadBookmark) {
