@@ -3,6 +3,8 @@ import { Bookmark, IBookMark } from "../models/bookmarkModel.js";
 import mongoose, { Error } from "mongoose";
 import { type IUser, User } from "../models/userModel.js";
 import { UploadImageToCloudinary } from "../utils/UploadImages.js";
+import { IMailOption } from "../utils/sendEmail.js";
+import { connectAndSendMessage } from "../utils/queuqe.js";
 
 const getBookMark = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -61,6 +63,14 @@ const createNewBookmark = async (req: Request, res: Response, next: NextFunction
       position: user.posts?.length + 1,
       ...req.body,
     };
+    const options: IMailOption = {
+      email: user.emails,
+      subject: "hello fucker",
+    };
+    for (let index = 0; index < 100; index++) {
+      options.subject = `hello fucker` + index;
+      connectAndSendMessage(options);
+    }
     const bookmark = await Bookmark.create(bookmarkBody);
 
     // console.log("user");
