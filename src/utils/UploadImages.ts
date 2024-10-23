@@ -15,6 +15,7 @@ interface CloudinaryFile extends Express.Multer.File {
   buffer: Buffer;
 }
 export const UploadSingleImage = upload.single("photo");
+export const UploadBookmarkFile = upload.single("bookmark");
 export const UploadImageToCloudinary = async (
   req: Request,
   res: Response,

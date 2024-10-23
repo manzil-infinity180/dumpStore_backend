@@ -16,6 +16,7 @@ export interface IBookMark extends Document {
   image?: string;
   position?: number;
   topics_position?: number;
+  user_id: string;
 }
 const bookMarkSchema = new Schema<IBookMark>(
   {
@@ -26,7 +27,7 @@ const bookMarkSchema = new Schema<IBookMark>(
     link: {
       type: String,
       required: [true, "Bookmark Link is Essential"],
-      unique: true,
+      // unique: true,
     },
     description: {
       type: String,
@@ -45,6 +46,9 @@ const bookMarkSchema = new Schema<IBookMark>(
       type: Number,
     },
     image: {
+      type: String,
+    },
+    user_id: {
       type: String,
     },
   },
