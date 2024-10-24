@@ -1,5 +1,11 @@
 name: dumpstore-backend
-on: push
+on:
+  push:
+  pull_request:
+env:
+  REGISTRY: ghcr.io
+  DOCKER_IMAGE_NAME: social-media-api
+  DOCKERFILE_PATH: ./Dockerfile
 jobs:
   server:
     name: "Dumpstore backend Server"
@@ -18,4 +24,26 @@ jobs:
         env:
           DOTENV_KEY: ${{ secrets.DOTENV_KEY }}
 
-  
+    build:
+       name: "Build Docker Registry"
+       runs-on: ubuntu-22.04
+       permissions:
+          contents: read
+          packages: write
+       steps:
+        - name: Checkout 
+          uses: actions/checkout
+        - name: Login to Docker Hub
+          uses: docker/login-action@v3
+          with:
+            username: ${{ github.repository_owner }}
+            password: ${{ secrets.GITHUB_TOKEN }}
+            registry: ghcr.io
+        - name: Build and push
+          uses: docker/build-push-action@v2
+          with:
+            context: .
+            file: ${{ env.DOCKERFILE_PATH }}
+            push: true
+            tags: |
+              ghcr.io/${{ github.repository_owner }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
