@@ -4,7 +4,7 @@ on:
   pull_request:
 env:
   REGISTRY: ghcr.io
-  DOCKER_IMAGE_NAME: social-media-api
+  DOCKER_IMAGE_NAME: dumpStore-backend
   DOCKERFILE_PATH: ./Dockerfile
 jobs:
   server:
