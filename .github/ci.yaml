@@ -1,0 +1,21 @@
+name: dumpstore-backend
+on: push
+jobs:
+  server:
+    name: "Dumpstore backend Server"
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: ./
+    permissions: write-all
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+      - name: Install Dependencies
+        run: npm install
+        env:
+          DOTENV_KEY: ${{ secrets.DOTENV_KEY }}
+
+  
