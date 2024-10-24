@@ -24,7 +24,7 @@ jobs:
         env:
           DOTENV_KEY: ${{ secrets.DOTENV_KEY }}
 
-    build:
+  build:
        name: "Build Docker Registry"
        runs-on: ubuntu-22.04
        permissions:
