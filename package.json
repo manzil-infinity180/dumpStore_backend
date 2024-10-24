@@ -5,9 +5,11 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "rimraf dist && tsc",
     "start": "node dist/server.js",
-    "dev": "npx tsc && nodemon dist/server.js"
+    "dev": "npx tsc && nodemon dist/server.js",
+    "vercel-build": "npm run build",
+    "postinstall": "tsc"
   },
   "keywords": [],
   "author": "",
@@ -47,6 +49,7 @@
     "passport": "^0.7.0",
     "passport-github2": "^0.1.12",
     "passport-google-oauth20": "^2.0.0",
-    "puppeteer": "^23.6.0"
+    "puppeteer": "^23.6.0",
+    "rimraf": "^6.0.1"
   }
 }
