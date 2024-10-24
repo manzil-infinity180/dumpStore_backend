@@ -6,9 +6,8 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "npx tsc && node dist/server.js",
-    "dev": "npx tsc && nodemon dist/server.js",
-    "start:prod":"node dist/server.js"
+    "start": "node dist/server.js",
+    "dev": "npx tsc && nodemon dist/server.js"
   },
   "keywords": [],
   "author": "",
