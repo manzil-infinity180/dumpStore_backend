@@ -11,7 +11,6 @@ import { router as AIRouter } from "./routers/openSourceAIRoute.js";
 import { IUser } from "./models/userModel.js";
 import { sendCookiesAndToken } from "./utils/sendCookiesAndToken.js";
 import { isAuthenticated } from "./controllers/authController.js";
-import { oauth2Client } from "./controllers/bookmarkController.js";
 
 app.use(CookieParser());
 app.use(bodyParser.json());
@@ -55,10 +54,6 @@ app.get("/", (req: Request, res: Response) => {
 app.get("/login/success", async (req: Request, res: Response) => {
   if (req.isAuthenticated() && req.user) {
     const user = req.user as IUser;
-    // console.log(req.user);
-    console.log(req.query.code);
-    // const {tokens} = await oauth2Client.getToken(req.query.code);
-    // oauth2Client.getToken(req.query.code)
     await sendCookiesAndToken(user, res);
     res.redirect("http://localhost:5173/");
   } else {

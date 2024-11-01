@@ -342,7 +342,7 @@ const uploadImageToCloud = async (req: Request, res: Response, next: NextFunctio
 export const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
-  `http://localhost:3008/auth/google/callback`
+  process.env.GOOGLE_CALLBACK_CALENDAR
 );
 const addRemainderToCalendar = async (
   req: Request,
@@ -350,36 +350,32 @@ const addRemainderToCalendar = async (
   next: NextFunction
 ) => {
   try {
-    console.log("fuckere");
-    console.log({
-      'id': process.env.GOOGLE_CLIENT_ID_NEW,
-      'secret': process.env.GOOGLE_CLIENT_SECRET_NEW,
-    });
-    
-    console.log(oauth2Client);
-    // oauth2Client.
-    const calendar = google.calendar({
-      version: "v3",
-      auth: oauth2Client,
-    });
+    const {summary, link, endDate, startDate} = req.body;
+    console.log(req.body);
+    const calendar = google.calendar({ version: "v3", auth: oauth2Client });
     const event = {
-      summary: "Tech Talk with Rahul",
-      location: "Google Meet",
-
-      description: "Demo event for Rahul's Blog Post.",
+      summary: summary,
+      description: `As you added remainder for this link ${link}`,
       start: {
-        dateTime: "2024-10-14T19:30:00+05:30",
-        timeZone: "Asia/Kolkata",
+        dateTime: startDate,
+        timeZone: "UTC",
       },
       end: {
-        dateTime: "2024-11-14T20:30:00+05:30",
-        timeZone: "Asia/Kolkata",
+        dateTime: endDate,
+        timeZone: "UTC",
+      },
+      reminders: {
+        useDefault: false,
+        overrides: [
+          { method: "popup", minutes: 30 }, // Reminder 30 minutes before
+          { method: "email", minutes: 60 * 24 }, // Email reminder a day before
+        ],
       },
     };
+    console.log(event);
     const result = await calendar.events.insert({
-      calendarId: "primary",
-      auth: oauth2Client,
-      sendUpdates: "all",
+      calendarId: "primary", // Use the primary calendar of the user
+      requestBody: event,
     });
 
     res.status(200).json({

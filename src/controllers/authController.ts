@@ -62,8 +62,7 @@ passport.use(
         emails: user.emails,
       });
       console.log(accessToken)
-      //@ts-ignore
-      // oauth2Client.setCredentials(accessToken);
+      oauth2Client.setCredentials({access_token : accessToken});
 
       if (alreadyExistedUser) {
         return done(null, alreadyExistedUser);

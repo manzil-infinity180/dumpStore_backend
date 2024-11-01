@@ -38,6 +38,6 @@ router.post("/save-order", updateBookmarkOrder);
 router.delete("/delete-bookmark/:id", deleteBookmark);
 router.delete("/delete-bookmark-by-topics", deleteAllBookmarkByTopics);
 /** CALENDAR */
-router.get("/calendar", addRemainderToCalendar);
+router.post("/calendar", addRemainderToCalendar);
 
 export { router };
