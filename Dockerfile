@@ -8,8 +8,7 @@ WORKDIR /dumpstore/backend
 COPY package*.json ./
 
 # Install dependencies using npm ci for faster, consistent installs
-RUN npm ci \
-    && npm cache clean --force
+RUN npm install
 
  # Add node_modules/.bin to PATH for easier access to executables
 ENV PATH /dumpstore/backend/node_modules/.bin:$PATH
