@@ -54,7 +54,6 @@ app.get("/", (req: Request, res: Response) => {
 app.get("/login/success", async (req: Request, res: Response) => {
   if (req.isAuthenticated() && req.user) {
     const user = req.user as IUser;
-    console.log(req.user);
     await sendCookiesAndToken(user, res);
     res.redirect("http://localhost:5173/");
   } else {
@@ -69,4 +68,18 @@ app.get("/login/hello", isAuthenticated, (req: Request, res: Response) => {
   } else {
     res.redirect("/login");
   }
+});
+
+app.get("/bookmark", isAuthenticated, async (req: Request, res: Response) => {
+  const response = await fetch("https://api.x.com/2/users/manzil_rahul/bookmarks", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${process.env.TWITTER_BEARER_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  const data = await response.json();
+  console.log(data);
+  res.send(data);
 });

@@ -2,6 +2,7 @@ import { Router } from "express";
 const router = Router();
 import {
   addBookmarkTopic,
+  addRemainderToCalendar,
   createNewBookmark,
   deleteAllBookmarkByTopics,
   deleteBookmark,
@@ -38,5 +39,7 @@ router.post("/save-order", updateBookmarkOrder);
 /** DELETE */
 router.delete("/delete-bookmark/:id", deleteBookmark);
 router.delete("/delete-bookmark-by-topics", deleteAllBookmarkByTopics);
+/** CALENDAR */
+router.post("/calendar", addRemainderToCalendar);
 
 export { router };

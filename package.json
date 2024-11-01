@@ -2,12 +2,14 @@
   "name": "dumpstore-backend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/server.js",
   "type": "module",
   "scripts": {
-    "build": "tsc",
-    "start": "npx tsc && node dist/server.js",
-    "dev": "npx tsc && nodemon dist/server.js"
+    "build": "rimraf dist && tsc",
+    "start": "node dist/server.js",
+    "dev": "npx tsc && nodemon dist/server.js",
+    "vercel-build": "npm run build",
+    "postinstall": "tsc"
   },
   "keywords": [],
   "author": "",
@@ -39,6 +41,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
     "express-session": "^1.18.0",
+    "googleapis": "^144.0.0",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.9.0",
     "mongoose": "^8.7.0",
@@ -48,6 +51,7 @@
     "passport": "^0.7.0",
     "passport-github2": "^0.1.12",
     "passport-google-oauth20": "^2.0.0",
-    "puppeteer": "^23.6.0"
+    "puppeteer": "^23.6.0",
+    "rimraf": "^6.0.1"
   }
 }

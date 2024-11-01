@@ -1,9 +1,12 @@
+import dotenv from 'dotenv'
+dotenv.config();
 import { NextFunction, Request, Response } from "express";
 import { Bookmark, IBookMark } from "../models/bookmarkModel.js";
 import mongoose, { Error } from "mongoose";
 import { type IUser, User } from "../models/userModel.js";
 import { UploadImageToCloudinary } from "../utils/UploadImages.js";
-import * as cheerio from "cheerio";
+// const { google } = require("googleapis");
+import { google } from "googleapis";
 const getBookMark = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const bookmark = await Bookmark.findById(req.params.id);
@@ -340,6 +343,57 @@ const uploadImageToCloud = async (req: Request, res: Response, next: NextFunctio
     });
   }
 };
+export const oauth2Client = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  process.env.GOOGLE_CALLBACK_CALENDAR
+);
+const addRemainderToCalendar = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const {summary, link, endDate, startDate} = req.body;
+    console.log(req.body);
+    const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+    const event = {
+      summary: summary,
+      description: `As you added remainder for this link ${link}`,
+      start: {
+        dateTime: startDate,
+        timeZone: "UTC",
+      },
+      end: {
+        dateTime: endDate,
+        timeZone: "UTC",
+      },
+      reminders: {
+        useDefault: false,
+        overrides: [
+          { method: "popup", minutes: 30 }, // Reminder 30 minutes before
+          { method: "email", minutes: 60 * 24 }, // Email reminder a day before
+        ],
+      },
+    };
+    console.log(event);
+    const result = await calendar.events.insert({
+      calendarId: "primary", // Use the primary calendar of the user
+      requestBody: event,
+    });
+
+    res.status(200).json({
+      status: "success",
+      data: result,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({
+      status: "failed",
+      message: (err as Error).message,
+    });
+  }
+};
 
 const searchBookmark = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -466,4 +520,5 @@ export {
   uploadImageToCloud,
   updateBookmarkOrder,
   getAllChromeBookmark,
+  addRemainderToCalendar,
 };
