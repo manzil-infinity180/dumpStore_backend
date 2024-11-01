@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: "20.x"
       - name: Install Dependencies
-        run: npm install
+        run: npm install -g npm@latest
         env:
           DOTENV_KEY: ${{ secrets.DOTENV_KEY }}
 
