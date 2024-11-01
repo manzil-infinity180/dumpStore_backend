@@ -7,7 +7,6 @@ import { type IUser, User } from "../models/userModel.js";
 import { UploadImageToCloudinary } from "../utils/UploadImages.js";
 // const { google } = require("googleapis");
 import { google } from "googleapis";
-
 const getBookMark = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const bookmark = await Bookmark.findById(req.params.id);
@@ -62,6 +61,7 @@ const createNewBookmark = async (req: Request, res: Response, next: NextFunction
       link,
       tag,
       image: favicon,
+      user_id: user.id,
       position: user.posts?.length + 1,
       ...req.body,
     };
@@ -115,8 +115,11 @@ const getAllBookMark = async (req: Request, res: Response, next: NextFunction) =
 const getBookmarkByTopic = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log(req.body.topics);
-    //@ts-ignore
-    const allBookmark = await Bookmark.find({ topics: req.body.topics });
+    const user = await User.findById(req.user);
+    const allBookmark = await Bookmark.find({
+      topics: req.body.topics,
+      user_id: user.id,
+    });
     res.status(200).json({
       status: "sucess",
       message: "Updated Bookmark Data",
@@ -244,9 +247,10 @@ const deleteAllBookmarkByTopics = async (
 ) => {
   try {
     const { topics } = req.body;
-    await Bookmark.deleteMany({ topics });
+    const user = await User.findById(req.user);
+    await Bookmark.deleteMany({ topics, user_id: user.id });
     //@ts-ignore
-    const user = await User.findById({ _id: req.user._id });
+    // const user = await User.findById({ _id: req.user._id });
     let alltopics = user.topics;
     if (alltopics.length) {
       const filterTopics = alltopics.filter(
@@ -427,7 +431,77 @@ const searchBookmark = async (req: Request, res: Response, next: NextFunction) =
     });
   }
 };
+const getAllChromeBookmark = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const file = req.file;
+    console.log(file);
+    if (!file) {
+      throw new Error("No file received");
+    }
+    if (file.mimetype != "text/html") {
+      throw new Error("Only html files is accepted");
+    }
+    const fileRead = Buffer.from(req.file.buffer).toString("utf-8");
+    if (!fileRead) {
+      throw new Error("Getting issues while reading file");
+    }
+    const $ = cheerio.load(fileRead);
+    const user = await User.findById(req.user);
+    const bookmarks: Partial<IBookMark>[] = [];
+    let position = user.posts.length + 1;
+    $("a").each((i, elem) => {
+      const title = $(elem).text();
+      const link = $(elem).attr("href");
+      const domain = new URL(link).hostname;
+      if (!process.env.LOGO_FAVICON_URL) throw new Error("Favicon URl is invalid");
+      const image = process.env.LOGO_FAVICON_URL.replace("<DOMAIN>", domain);
+      const bookmark_object = {
+        title,
+        link,
+        tag: "exported",
+        topics: "exported data",
+        image,
+        position: position + i,
+        topics_position: i,
+        user_id: user.id,
+      };
 
+      bookmarks.push(bookmark_object);
+    });
+
+    // console.log(bookmarks.slice(0, 5));
+    const uploadBookmark = await Bookmark.insertMany(bookmarks);
+    console.log(uploadBookmark);
+    if (!uploadBookmark) {
+      throw new Error("Getting issue while uploading to database");
+    }
+    // user.posts.push(bookmark._id);
+    uploadBookmark.forEach((el) => {
+      user.posts.push(el._id);
+    });
+
+    const result = user.topics.find(
+      (el) => "exported data".toLowerCase() == el.toLowerCase()
+    );
+    console.log(result);
+    if (!result) {
+      user.topics.push("exported data");
+    }
+    await user.save();
+
+    res.status(200).json({
+      status: "success",
+      message: "Uploaded bro",
+      totalBookmarkInserted: uploadBookmark.length,
+      // allBookmark: bookmarks,
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: "failed",
+      message: (error as Error).message,
+    });
+  }
+};
 // TODO : get bookmark by topic and set default as all
 // TODO : on selecting on any  tag fetch the data only for tag (get data by tag)
 
@@ -445,5 +519,6 @@ export {
   deleteAllBookmarkByTopics,
   uploadImageToCloud,
   updateBookmarkOrder,
+  getAllChromeBookmark,
   addRemainderToCalendar,
 };
