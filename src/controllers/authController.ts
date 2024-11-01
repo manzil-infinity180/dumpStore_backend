@@ -7,6 +7,7 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as GithubStrategy } from "passport-github2";
 import { IUser, User } from "../models/userModel.js";
 import mongoose from "mongoose";
+import { oauth2Client } from "./bookmarkController.js";
 
 // Passport serialization
 passport.serializeUser(function (user, cb) {
@@ -60,6 +61,9 @@ passport.use(
       const alreadyExistedUser = await User.findOne({
         emails: user.emails,
       });
+      console.log(accessToken)
+      oauth2Client.setCredentials({access_token : accessToken});
+
       if (alreadyExistedUser) {
         return done(null, alreadyExistedUser);
       }

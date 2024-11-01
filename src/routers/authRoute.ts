@@ -5,7 +5,7 @@ import "../controllers/authController.js";
 import { type IUser } from "../models/userModel.js";
 
 // Google Router
-router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+router.get("/google", passport.authenticate("google", { scope: ["profile", "email", "https://www.googleapis.com/auth/calendar"] }));
 
 router.get(
   "/google/callback",
