@@ -6,6 +6,7 @@ import mongoose, { Error } from "mongoose";
 import { type IUser, User } from "../models/userModel.js";
 import { UploadImageToCloudinary } from "../utils/UploadImages.js";
 // const { google } = require("googleapis");
+import * as cheerio from "cheerio"
 import { google } from "googleapis";
 const getBookMark = async (req: Request, res: Response, next: NextFunction) => {
   try {
