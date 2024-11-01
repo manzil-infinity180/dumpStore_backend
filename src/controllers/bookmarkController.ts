@@ -1,8 +1,12 @@
+import dotenv from 'dotenv'
+dotenv.config();
 import { NextFunction, Request, Response } from "express";
 import { Bookmark, IBookMark } from "../models/bookmarkModel.js";
 import mongoose, { Error } from "mongoose";
 import { type IUser, User } from "../models/userModel.js";
 import { UploadImageToCloudinary } from "../utils/UploadImages.js";
+// const { google } = require("googleapis");
+import { google } from "googleapis";
 
 const getBookMark = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -335,6 +339,61 @@ const uploadImageToCloud = async (req: Request, res: Response, next: NextFunctio
     });
   }
 };
+export const oauth2Client = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  `http://localhost:3008/auth/google/callback`
+);
+const addRemainderToCalendar = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    console.log("fuckere");
+    console.log({
+      'id': process.env.GOOGLE_CLIENT_ID_NEW,
+      'secret': process.env.GOOGLE_CLIENT_SECRET_NEW,
+    });
+    
+    console.log(oauth2Client);
+    // oauth2Client.
+    const calendar = google.calendar({
+      version: "v3",
+      auth: oauth2Client,
+    });
+    const event = {
+      summary: "Tech Talk with Rahul",
+      location: "Google Meet",
+
+      description: "Demo event for Rahul's Blog Post.",
+      start: {
+        dateTime: "2024-10-14T19:30:00+05:30",
+        timeZone: "Asia/Kolkata",
+      },
+      end: {
+        dateTime: "2024-11-14T20:30:00+05:30",
+        timeZone: "Asia/Kolkata",
+      },
+    };
+    const result = await calendar.events.insert({
+      calendarId: "primary",
+      auth: oauth2Client,
+      sendUpdates: "all",
+    });
+
+    res.status(200).json({
+      status: "success",
+      data: result,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({
+      status: "failed",
+      message: (err as Error).message,
+    });
+  }
+};
 
 const searchBookmark = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -390,4 +449,5 @@ export {
   deleteAllBookmarkByTopics,
   uploadImageToCloud,
   updateBookmarkOrder,
+  addRemainderToCalendar,
 };
