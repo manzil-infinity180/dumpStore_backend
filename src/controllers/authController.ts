@@ -7,6 +7,7 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as GithubStrategy } from "passport-github2";
 import { IUser, User } from "../models/userModel.js";
 import mongoose from "mongoose";
+import { Strategy as TwitterStrategy} from "passport-twitter"
 import { oauth2Client } from "./bookmarkController.js";
 
 // Passport serialization
@@ -134,6 +135,20 @@ passport.use(
     }
   )
 );
+
+console.log({consumerKey: process.env.TWITTER_OAUTH_API_KEY,
+  consumerSecret: process.env.TWITTER_OAUTH_SECRET,
+  callbackURL: "/auth/twitter/callback"});
+passport.use(new TwitterStrategy({
+  consumerKey: process.env.TWITTER_OAUTH_API_KEY,
+  consumerSecret: process.env.TWITTER_OAUTH_SECRET,
+  callbackURL: "/auth/twitter/callback"
+},
+function(token, tokenSecret, profile, done) {
+  console.log(profile);
+ return done(null);
+}
+));
 
 /**
  * User interface we defined and the Express.User type expected by Passport.
