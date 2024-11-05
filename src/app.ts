@@ -62,7 +62,7 @@ app.get("/login/success", async (req: Request, res: Response) => {
 });
 
 app.get("/login/twitter/success", async (req: Request, res: Response) => {
-  console.log(req.user);
+     res.send(req.user);
 });
 app.get("/login/hello", isAuthenticated, (req: Request, res: Response) => {
   if (req.isAuthenticated() && req.user) {

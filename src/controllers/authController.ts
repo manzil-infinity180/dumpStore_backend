@@ -139,6 +139,7 @@ passport.use(
 console.log({consumerKey: process.env.TWITTER_OAUTH_API_KEY,
   consumerSecret: process.env.TWITTER_OAUTH_SECRET,
   callbackURL: "/auth/twitter/callback"});
+  
 passport.use(new TwitterStrategy({
   consumerKey: process.env.TWITTER_OAUTH_API_KEY,
   consumerSecret: process.env.TWITTER_OAUTH_SECRET,
