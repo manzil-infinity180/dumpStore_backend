@@ -503,6 +503,41 @@ const getAllChromeBookmark = async (req: Request, res: Response, next: NextFunct
     });
   }
 };
+
+const getAllChromeBookmarkFromExtension =async (req: Request, res: Response, next: NextFunction) => {
+  try{
+    const user = await User.findById(req.user);
+    
+    const {allbookmark} = req.body;
+    // if(allbookmark.length >= 1){
+    //   throw new Error("No data arrived");
+    // }
+    const x : Partial<IBookMark>[] = allbookmark
+    console.log(x);
+    // console.log(allbookmark);
+    const uploadBookmark = await Bookmark.insertMany(allbookmark as Partial<IBookMark>[]);
+    const result = user.topics.find(
+      (el) => "exported data".toLowerCase() == el.toLowerCase()
+    );
+    console.log(result);
+    if (!result) {
+      user.topics.push("exported data");
+    }
+    await user.save();
+
+    res.status(200).json({
+      status: "success",
+      message: "Uploaded bro",
+      totalBookmarkInserted: uploadBookmark.length,
+      // allBookmark: bookmarks,
+    });
+  }catch(err){
+      res.status(400).json({
+          status: "failed",
+          message: (err as Error).message,
+      });
+  }
+}
 // TODO : get bookmark by topic and set default as all
 // TODO : on selecting on any  tag fetch the data only for tag (get data by tag)
 
@@ -522,4 +557,5 @@ export {
   updateBookmarkOrder,
   getAllChromeBookmark,
   addRemainderToCalendar,
+  getAllChromeBookmarkFromExtension
 };

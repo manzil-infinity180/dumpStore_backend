@@ -8,6 +8,7 @@ import {
   deleteBookmark,
   getAllBookMark,
   getAllChromeBookmark,
+  getAllChromeBookmarkFromExtension,
   getBookMark,
   getBookmarkByTopic,
   getMyProfile,
@@ -31,6 +32,7 @@ router.post("/create-bookmark", createNewBookmark);
 router.post("/search-bookmark", searchBookmark);
 router.post("/upload-image-to-cloud", UploadSingleImage, uploadImageToCloud);
 router.post("/upload-all-chrome-bookmark", UploadBookmarkFile, getAllChromeBookmark);
+router.post("/upload-all-bookmark-from-extension", getAllChromeBookmarkFromExtension);
 /** PATCH */
 router.patch("/update-bookmark", updateBookmark);
 router.patch("/add-bookmark-topic", addBookmarkTopic);
