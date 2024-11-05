@@ -60,6 +60,10 @@ app.get("/login/success", async (req: Request, res: Response) => {
     res.redirect("/login");
   }
 });
+
+app.get("/login/twitter/success", async (req: Request, res: Response) => {
+     res.send(req.user);
+});
 app.get("/login/hello", isAuthenticated, (req: Request, res: Response) => {
   if (req.isAuthenticated() && req.user) {
     const user = req.user as IUser;

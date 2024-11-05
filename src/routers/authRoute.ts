@@ -26,4 +26,14 @@ router.get(
   })
 );
 
+// twitter router 
+router.get("/twitter", passport.authenticate("twitter"));
+router.get(
+  "/twitter/callback",
+  passport.authenticate("twitter", {
+    successReturnToOrRedirect: "/login/twitter/success",
+    failureRedirect: "/login/fail",
+  })
+);
+
 export { router };
