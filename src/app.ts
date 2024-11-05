@@ -62,7 +62,10 @@ app.get("/login/success", async (req: Request, res: Response) => {
 });
 
 app.get("/login/twitter/success", async (req: Request, res: Response) => {
-     res.send(req.user);
+  const userData = JSON.stringify(req.user, undefined, 2);
+  res.end(
+    `<h1>Authentication succeeded</h1> User data: <pre>${userData}</pre>`
+  );
 });
 app.get("/login/hello", isAuthenticated, (req: Request, res: Response) => {
   if (req.isAuthenticated() && req.user) {
