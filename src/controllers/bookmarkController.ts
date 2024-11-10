@@ -25,8 +25,10 @@ const getBookMark = async (req: Request, res: Response, next: NextFunction) => {
 };
 const getMyProfile = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // @ts-ignore
+    console.log(req.user);
+    //@ts-ignore
     const user = await User.findById({ _id: req.user._id }).populate("posts");
+    console.log(user)
     res.status(200).json({
       status: "sucess",
       message: "User Data Fetched",
@@ -53,7 +55,7 @@ const createNewBookmark = async (req: Request, res: Response, next: NextFunction
     if (req.body.image?.length > 0) {
       favicon = req.body.image;
     }
-    // @ts-ignore
+    //@ts-ignore
     const user = await User.findById({ _id: req.user._id });
     console.log(user.posts);
     // TODO : if req.file is existed (manual logo) then you need to omit/override the image
@@ -62,7 +64,7 @@ const createNewBookmark = async (req: Request, res: Response, next: NextFunction
       link,
       tag,
       image: favicon,
-      user_id: user.id,
+      user_id: user._id, // it should be _id not google/github generated id
       position: user.posts?.length + 1,
       ...req.body,
     };
@@ -96,14 +98,17 @@ const createNewBookmark = async (req: Request, res: Response, next: NextFunction
     });
   }
 };
+/**
+ * Getting data now, from Bookmark Model not from User post array
+ */
 const getAllBookMark = async (req: Request, res: Response, next: NextFunction) => {
   try {
     //@ts-ignore
-    const allBookmark = await User.findById({ _id: req.user._id }).populate("posts");
+    const allBookmark = await Bookmark.find({ user_id: req.user._id });
     res.status(200).json({
       status: "sucess",
-      message: "Updated Bookmark Data",
-      data: allBookmark.posts,
+      message: "User all Bookmark Data",
+      data: allBookmark,
     });
   } catch (err) {
     res.status(400).json({
@@ -116,10 +121,11 @@ const getAllBookMark = async (req: Request, res: Response, next: NextFunction) =
 const getBookmarkByTopic = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log(req.body.topics);
-    const user = await User.findById(req.user);
+    //@ts-ignore
+    const user = await User.findById(req.user._id);
     const allBookmark = await Bookmark.find({
       topics: req.body.topics,
-      user_id: user.id,
+      user_id: user._id,
     });
     res.status(200).json({
       status: "sucess",
@@ -248,8 +254,9 @@ const deleteAllBookmarkByTopics = async (
 ) => {
   try {
     const { topics } = req.body;
-    const user = await User.findById(req.user);
-    await Bookmark.deleteMany({ topics, user_id: user.id });
+    //@ts-ignore
+    const user = await User.findById(req.user._id);
+    await Bookmark.deleteMany({ topics, user_id: user._id });
     //@ts-ignore
     // const user = await User.findById({ _id: req.user._id });
     let alltopics = user.topics;
@@ -459,12 +466,12 @@ const getAllChromeBookmark = async (req: Request, res: Response, next: NextFunct
       const bookmark_object = {
         title,
         link,
-        tag: "exported",
-        topics: "exported data",
+        tag: "chrome",
+        topics: "chrome",
         image,
         position: position + i,
         topics_position: i,
-        user_id: user.id,
+        user_id: user._id,
       };
 
       bookmarks.push(bookmark_object);
@@ -477,16 +484,16 @@ const getAllChromeBookmark = async (req: Request, res: Response, next: NextFunct
       throw new Error("Getting issue while uploading to database");
     }
     // user.posts.push(bookmark._id);
-    uploadBookmark.forEach((el) => {
-      user.posts.push(el._id);
-    });
+    // uploadBookmark.forEach((el) => {
+    //   user.posts.push(el._id);
+    // });
 
     const result = user.topics.find(
-      (el) => "exported data".toLowerCase() == el.toLowerCase()
+      (el) => "chrome".toLowerCase() == el.toLowerCase()
     );
     console.log(result);
     if (!result) {
-      user.topics.push("exported data");
+      user.topics.push("chrome");
     }
     await user.save();
 
@@ -517,11 +524,11 @@ const getAllChromeBookmarkFromExtension =async (req: Request, res: Response, nex
     // console.log(allbookmark);
     const uploadBookmark = await Bookmark.insertMany(allbookmark as Partial<IBookMark>[]);
     const result = user.topics.find(
-      (el) => "exported data".toLowerCase() == el.toLowerCase()
+      (el) => "chrome".toLowerCase() == el.toLowerCase()
     );
     console.log(result);
     if (!result) {
-      user.topics.push("exported data");
+      user.topics.push("chrome");
     }
     await user.save();
 

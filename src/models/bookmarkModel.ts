@@ -16,7 +16,7 @@ export interface IBookMark extends Document {
   image?: string;
   position?: number;
   topics_position?: number;
-  user_id: string;
+  user_id: mongoose.Schema.Types.ObjectId;
 }
 const bookMarkSchema = new Schema<IBookMark>(
   {

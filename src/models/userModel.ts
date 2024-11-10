@@ -39,6 +39,7 @@ const userSchema = new Schema<IUser>({
   topics: [
     {
       type: String,
+      default: ["twitter", "linkedin", "reddit", "chrome"]
     },
   ],
 });
