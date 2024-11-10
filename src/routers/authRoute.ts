@@ -27,7 +27,9 @@ router.get(
 );
 
 // twitter router 
-router.get("/twitter", passport.authenticate("twitter"));
+router.get("/twitter", passport.authenticate("twitter", {
+  scope: ['tweet.read', 'users.read', 'offline.access'],
+}));
 router.get(
   "/twitter/callback",
   passport.authenticate("twitter", {
