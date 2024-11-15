@@ -25,8 +25,10 @@ const getBookMark = async (req: Request, res: Response, next: NextFunction) => {
 };
 const getMyProfile = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // @ts-ignore
+    console.log(req.user);
+    //@ts-ignore
     const user = await User.findById({ _id: req.user._id }).populate("posts");
+    console.log(user)
     res.status(200).json({
       status: "sucess",
       message: "User Data Fetched",
@@ -41,7 +43,8 @@ const getMyProfile = async (req: Request, res: Response, next: NextFunction) => 
 };
 const createNewBookmark = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { title, link, tag } = req.body;
+    const { title, link, tag, calendar } = req.body;
+    console.log(calendar);
     console.log(req.body);
     if (!title || !link || !tag) {
       throw new Error("Title, Link, Tag is compulsory fields");
@@ -53,7 +56,7 @@ const createNewBookmark = async (req: Request, res: Response, next: NextFunction
     if (req.body.image?.length > 0) {
       favicon = req.body.image;
     }
-    // @ts-ignore
+    //@ts-ignore
     const user = await User.findById({ _id: req.user._id });
     console.log(user.posts);
     // TODO : if req.file is existed (manual logo) then you need to omit/override the image
@@ -62,7 +65,7 @@ const createNewBookmark = async (req: Request, res: Response, next: NextFunction
       link,
       tag,
       image: favicon,
-      user_id: user.id,
+      user_id: user._id, // it should be _id not google/github generated id
       position: user.posts?.length + 1,
       ...req.body,
     };
@@ -96,14 +99,17 @@ const createNewBookmark = async (req: Request, res: Response, next: NextFunction
     });
   }
 };
+/**
+ * Getting data now, from Bookmark Model not from User post array
+ */
 const getAllBookMark = async (req: Request, res: Response, next: NextFunction) => {
   try {
     //@ts-ignore
-    const allBookmark = await User.findById({ _id: req.user._id }).populate("posts");
+    const allBookmark = await Bookmark.find({ user_id: req.user._id });
     res.status(200).json({
       status: "sucess",
-      message: "Updated Bookmark Data",
-      data: allBookmark.posts,
+      message: "User all Bookmark Data",
+      data: allBookmark,
     });
   } catch (err) {
     res.status(400).json({
@@ -116,10 +122,11 @@ const getAllBookMark = async (req: Request, res: Response, next: NextFunction) =
 const getBookmarkByTopic = async (req: Request, res: Response, next: NextFunction) => {
   try {
     console.log(req.body.topics);
-    const user = await User.findById(req.user);
+    //@ts-ignore
+    const user = await User.findById(req.user._id);
     const allBookmark = await Bookmark.find({
       topics: req.body.topics,
-      user_id: user.id,
+      user_id: user._id,
     });
     res.status(200).json({
       status: "sucess",
@@ -248,8 +255,9 @@ const deleteAllBookmarkByTopics = async (
 ) => {
   try {
     const { topics } = req.body;
-    const user = await User.findById(req.user);
-    await Bookmark.deleteMany({ topics, user_id: user.id });
+    //@ts-ignore
+    const user = await User.findById(req.user._id);
+    await Bookmark.deleteMany({ topics, user_id: user._id });
     //@ts-ignore
     // const user = await User.findById({ _id: req.user._id });
     let alltopics = user.topics;
@@ -382,10 +390,12 @@ const addRemainderToCalendar = async (
       calendarId: "primary", // Use the primary calendar of the user
       requestBody: event,
     });
-
+    const {kind, etag, id, htmlLink} = result.data
     res.status(200).json({
       status: "success",
-      data: result,
+      data: {
+        kind, etag, id, htmlLink, ...event
+      },
     });
   } catch (err) {
     console.log(err);
@@ -395,6 +405,107 @@ const addRemainderToCalendar = async (
     });
   }
 };
+const updateRemainderToCalendar = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // bookmarkId - I am getting it from directly from frontend side just for bookmark Query
+    const {summary, link, endDate, startDate, eventId, bookmarkId} = req.body;
+    if(!eventId){
+      throw new Error("EventId is missing");
+    }
+    console.log(req.body);
+    const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+    const event = {
+      summary: summary,
+      description: `As you added remainder for this link ${link}`,
+      start: {
+        dateTime: startDate,
+        timeZone: "UTC",
+      },
+      end: {
+        dateTime: endDate,
+        timeZone: "UTC",
+      },
+      reminders: {
+        useDefault: false,
+        overrides: [
+          { method: "popup", minutes: 30 }, // Reminder 30 minutes before
+          { method: "email", minutes: 60 * 24 }, // Email reminder a day before
+        ],
+      },
+    };
+    console.log(event);
+    const result = await calendar.events.patch({
+      calendarId: "primary", // Use the primary calendar of the user
+      requestBody: event,
+      eventId:eventId
+    });
+    const {kind, id, htmlLink} = result.data
+    const calendarData = {
+      kind,
+      id,
+      htmlLink,
+      summary,
+      description: event.description,
+      start : event.start.dateTime,
+      end: event.end.dateTime,
+    }
+    const bookmarkCalendarData = await Bookmark.findById({_id: bookmarkId});
+    bookmarkCalendarData.calendar = calendarData;
+    bookmarkCalendarData.save();
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        kind, id, htmlLink, ...event
+      },
+      message:"Updated Your Remainder"
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({
+      status: "failed",
+      message: (err as Error).message,
+    });
+  }
+};
+
+const deleteRemainder = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // bookmarkId - getting it from frontend side
+    const {eventId, bookmarkId} = req.body;
+    if(!eventId){
+      throw new Error("EventId is missing");
+    }
+    console.log(req.body);
+    const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+    const result = await calendar.events.delete({
+      calendarId: "primary", // Use the primary calendar of the user
+      eventId: eventId
+    });
+    const bookmarkCalendarData = await Bookmark.updateOne({_id: bookmarkId}, {
+      $unset:{calendar: ""}
+    });
+    res.status(200).json({
+      status: "success",
+      message:"Deleted remainder successfully"
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({
+      status: "failed",
+      message: (err as Error).message,
+    });
+  }
+};
+
 
 const searchBookmark = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -459,12 +570,12 @@ const getAllChromeBookmark = async (req: Request, res: Response, next: NextFunct
       const bookmark_object = {
         title,
         link,
-        tag: "exported",
-        topics: "exported data",
+        tag: "chrome",
+        topics: "chrome",
         image,
         position: position + i,
         topics_position: i,
-        user_id: user.id,
+        user_id: user._id,
       };
 
       bookmarks.push(bookmark_object);
@@ -477,16 +588,16 @@ const getAllChromeBookmark = async (req: Request, res: Response, next: NextFunct
       throw new Error("Getting issue while uploading to database");
     }
     // user.posts.push(bookmark._id);
-    uploadBookmark.forEach((el) => {
-      user.posts.push(el._id);
-    });
+    // uploadBookmark.forEach((el) => {
+    //   user.posts.push(el._id);
+    // });
 
     const result = user.topics.find(
-      (el) => "exported data".toLowerCase() == el.toLowerCase()
+      (el) => "chrome".toLowerCase() == el.toLowerCase()
     );
     console.log(result);
     if (!result) {
-      user.topics.push("exported data");
+      user.topics.push("chrome");
     }
     await user.save();
 
@@ -503,6 +614,41 @@ const getAllChromeBookmark = async (req: Request, res: Response, next: NextFunct
     });
   }
 };
+
+const getAllChromeBookmarkFromExtension =async (req: Request, res: Response, next: NextFunction) => {
+  try{
+    const user = await User.findById(req.user);
+    
+    const {allbookmark} = req.body;
+    // if(allbookmark.length >= 1){
+    //   throw new Error("No data arrived");
+    // }
+    const x : Partial<IBookMark>[] = allbookmark
+    console.log(x);
+    // console.log(allbookmark);
+    const uploadBookmark = await Bookmark.insertMany(allbookmark as Partial<IBookMark>[]);
+    const result = user.topics.find(
+      (el) => "chrome".toLowerCase() == el.toLowerCase()
+    );
+    console.log(result);
+    if (!result) {
+      user.topics.push("chrome");
+    }
+    await user.save();
+
+    res.status(200).json({
+      status: "success",
+      message: "Uploaded bro",
+      totalBookmarkInserted: uploadBookmark.length,
+      // allBookmark: bookmarks,
+    });
+  }catch(err){
+      res.status(400).json({
+          status: "failed",
+          message: (err as Error).message,
+      });
+  }
+}
 // TODO : get bookmark by topic and set default as all
 // TODO : on selecting on any  tag fetch the data only for tag (get data by tag)
 
@@ -522,4 +668,7 @@ export {
   updateBookmarkOrder,
   getAllChromeBookmark,
   addRemainderToCalendar,
+  updateRemainderToCalendar,
+  deleteRemainder,
+  getAllChromeBookmarkFromExtension
 };

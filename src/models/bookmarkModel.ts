@@ -4,6 +4,9 @@ import mongoose, { Schema, model } from "mongoose";
  * topics and tag should be array but we will take care of it from frontend side
  * May be topics will not be array like -> try it to be in one topic only
  */
+interface ICalendar{
+  [x:string]: string | Date
+}
 export interface IBookMark extends Document {
   _id: mongoose.Schema.Types.ObjectId;
   title: string;
@@ -16,8 +19,24 @@ export interface IBookMark extends Document {
   image?: string;
   position?: number;
   topics_position?: number;
-  user_id: string;
+  user_id: mongoose.Schema.Types.ObjectId;
+  calendar?: ICalendar
 }
+
+const calendarSchema = new Schema<ICalendar>(
+    {
+      summary: String,
+      description: String,
+      start: Date,
+      end: Date,
+      kind: String,
+      etag: String,
+      id: String,
+      htmlLink: String
+    },{
+      _id: false
+    }
+)
 const bookMarkSchema = new Schema<IBookMark>(
   {
     title: {
@@ -51,6 +70,9 @@ const bookMarkSchema = new Schema<IBookMark>(
     user_id: {
       type: String,
     },
+    calendar: {
+      type: calendarSchema
+    }
   },
   {
     timestamps: true, // This automatically adds createdAt and updatedAt fields
