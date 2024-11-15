@@ -6,6 +6,7 @@ import {
   createNewBookmark,
   deleteAllBookmarkByTopics,
   deleteBookmark,
+  deleteRemainder,
   getAllBookMark,
   getAllChromeBookmark,
   getAllChromeBookmarkFromExtension,
@@ -15,6 +16,7 @@ import {
   searchBookmark,
   updateBookmark,
   updateBookmarkOrder,
+  updateRemainderToCalendar,
   uploadBookmarkImage,
   uploadImageToCloud,
 } from "../controllers/bookmarkController.js";
@@ -43,5 +45,7 @@ router.delete("/delete-bookmark/:id", deleteBookmark);
 router.delete("/delete-bookmark-by-topics", deleteAllBookmarkByTopics);
 /** CALENDAR */
 router.post("/calendar", addRemainderToCalendar);
+router.patch("/calendar/edit", updateRemainderToCalendar);
+router.delete('/calendar/delete', deleteRemainder);
 
 export { router };

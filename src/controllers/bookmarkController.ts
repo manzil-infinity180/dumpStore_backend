@@ -43,7 +43,8 @@ const getMyProfile = async (req: Request, res: Response, next: NextFunction) => 
 };
 const createNewBookmark = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { title, link, tag } = req.body;
+    const { title, link, tag, calendar } = req.body;
+    console.log(calendar);
     console.log(req.body);
     if (!title || !link || !tag) {
       throw new Error("Title, Link, Tag is compulsory fields");
@@ -389,10 +390,12 @@ const addRemainderToCalendar = async (
       calendarId: "primary", // Use the primary calendar of the user
       requestBody: event,
     });
-
+    const {kind, etag, id, htmlLink} = result.data
     res.status(200).json({
       status: "success",
-      data: result,
+      data: {
+        kind, etag, id, htmlLink, ...event
+      },
     });
   } catch (err) {
     console.log(err);
@@ -402,6 +405,107 @@ const addRemainderToCalendar = async (
     });
   }
 };
+const updateRemainderToCalendar = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // bookmarkId - I am getting it from directly from frontend side just for bookmark Query
+    const {summary, link, endDate, startDate, eventId, bookmarkId} = req.body;
+    if(!eventId){
+      throw new Error("EventId is missing");
+    }
+    console.log(req.body);
+    const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+    const event = {
+      summary: summary,
+      description: `As you added remainder for this link ${link}`,
+      start: {
+        dateTime: startDate,
+        timeZone: "UTC",
+      },
+      end: {
+        dateTime: endDate,
+        timeZone: "UTC",
+      },
+      reminders: {
+        useDefault: false,
+        overrides: [
+          { method: "popup", minutes: 30 }, // Reminder 30 minutes before
+          { method: "email", minutes: 60 * 24 }, // Email reminder a day before
+        ],
+      },
+    };
+    console.log(event);
+    const result = await calendar.events.patch({
+      calendarId: "primary", // Use the primary calendar of the user
+      requestBody: event,
+      eventId:eventId
+    });
+    const {kind, id, htmlLink} = result.data
+    const calendarData = {
+      kind,
+      id,
+      htmlLink,
+      summary,
+      description: event.description,
+      start : event.start.dateTime,
+      end: event.end.dateTime,
+    }
+    const bookmarkCalendarData = await Bookmark.findById({_id: bookmarkId});
+    bookmarkCalendarData.calendar = calendarData;
+    bookmarkCalendarData.save();
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        kind, id, htmlLink, ...event
+      },
+      message:"Updated Your Remainder"
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({
+      status: "failed",
+      message: (err as Error).message,
+    });
+  }
+};
+
+const deleteRemainder = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // bookmarkId - getting it from frontend side
+    const {eventId, bookmarkId} = req.body;
+    if(!eventId){
+      throw new Error("EventId is missing");
+    }
+    console.log(req.body);
+    const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+    const result = await calendar.events.delete({
+      calendarId: "primary", // Use the primary calendar of the user
+      eventId: eventId
+    });
+    const bookmarkCalendarData = await Bookmark.updateOne({_id: bookmarkId}, {
+      $unset:{calendar: ""}
+    });
+    res.status(200).json({
+      status: "success",
+      message:"Deleted remainder successfully"
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({
+      status: "failed",
+      message: (err as Error).message,
+    });
+  }
+};
+
 
 const searchBookmark = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -564,5 +668,7 @@ export {
   updateBookmarkOrder,
   getAllChromeBookmark,
   addRemainderToCalendar,
+  updateRemainderToCalendar,
+  deleteRemainder,
   getAllChromeBookmarkFromExtension
 };
