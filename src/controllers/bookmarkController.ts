@@ -1,33 +1,38 @@
-import dotenv from 'dotenv'
+import dotenv from "dotenv";
 dotenv.config();
 import { NextFunction, Request, Response } from "express";
 import { Bookmark, IBookMark } from "../models/bookmarkModel.js";
 import mongoose, { Error } from "mongoose";
-import { type IUser, User } from "../models/userModel.js";
+import { User } from "../models/userModel.js";
 import { UploadImageToCloudinary } from "../utils/UploadImages.js";
 // const { google } = require("googleapis");
-import * as cheerio from "cheerio"
+import * as cheerio from "cheerio";
 import { google } from "googleapis";
-import { ErrorResponse, SuccessResponse, SuccessResponseWithoutData } from '../utils/controllerUtils.js';
-const getBookMark = async (req: Request, res: Response, next: NextFunction) => {
+import {
+  ErrorResponse,
+  SuccessResponse,
+  SuccessResponseWithoutData,
+} from "../utils/controllerUtils.js";
+const getBookMark = async (req: Request, res: Response) => {
   try {
     const bookmark = await Bookmark.findById(req.params.id);
-    SuccessResponse(res,"Bookmark Data Fetched",200, bookmark);
+    SuccessResponse(res, "Bookmark Data Fetched", 200, bookmark);
   } catch (err) {
     ErrorResponse(res, err, 400);
   }
 };
-const getMyProfile = async (req: Request, res: Response, next: NextFunction) => {
+const getMyProfile = async (req: Request, res: Response) => {
   try {
-    //@ts-ignore
+    //@ts-expect-error: req.user is not typed
     const user = await User.findById({ _id: req.user._id }).populate("posts");
-    SuccessResponse(res,"User Data Fetched",200, user);
+    SuccessResponse(res, "User Data Fetched", 200, user);
   } catch (err) {
     ErrorResponse(res, err, 400);
   }
 };
-const createNewBookmark = async (req: Request, res: Response, next: NextFunction) => {
+const createNewBookmark = async (req: Request, res: Response) => {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { title, link, tag, calendar } = req.body;
     if (!title || !link || !tag) {
       throw new Error("Title, Link, Tag is compulsory fields");
@@ -39,7 +44,7 @@ const createNewBookmark = async (req: Request, res: Response, next: NextFunction
     if (req.body.image?.length > 0) {
       favicon = req.body.image;
     }
-    //@ts-ignore
+    //@ts-expect-error: req.user is not typed
     const user = await User.findById({ _id: req.user._id });
     // TODO : if req.file is existed (manual logo) then you need to omit/override the image
     const bookmarkBody: IBookMark = {
@@ -64,8 +69,7 @@ const createNewBookmark = async (req: Request, res: Response, next: NextFunction
       }
     }
     await user.save();
-    SuccessResponse(res,"New Dump Data is Inserted",200, bookmark);
-    
+    SuccessResponse(res, "New Dump Data is Inserted", 200, bookmark);
   } catch (err) {
     ErrorResponse(res, err, 400);
   }
@@ -73,30 +77,30 @@ const createNewBookmark = async (req: Request, res: Response, next: NextFunction
 /**
  * Getting data now, from Bookmark Model not from User post array
  */
-const getAllBookMark = async (req: Request, res: Response, next: NextFunction) => {
+const getAllBookMark = async (req: Request, res: Response) => {
   try {
-    //@ts-ignore
+    //@ts-expect-error: req.user is not typed
     const allBookmark = await Bookmark.find({ user_id: req.user._id });
-    SuccessResponse(res,"User all Bookmark Data",200, allBookmark);
+    SuccessResponse(res, "User all Bookmark Data", 200, allBookmark);
   } catch (err) {
     ErrorResponse(res, err, 400);
   }
 };
 
-const getBookmarkByTopic = async (req: Request, res: Response, next: NextFunction) => {
+const getBookmarkByTopic = async (req: Request, res: Response) => {
   try {
-    //@ts-ignore
+    //@ts-expect-error: req.user is not typed
     const user = await User.findById(req.user._id);
     const allBookmark = await Bookmark.find({
       topics: req.body.topics,
       user_id: user._id,
     });
-    SuccessResponse(res,"Updated Bookmark Data",200, allBookmark);
+    SuccessResponse(res, "Updated Bookmark Data", 200, allBookmark);
   } catch (err) {
     ErrorResponse(res, err, 400);
   }
 };
-// const getBookMarkByTags = async (req: Request, res: Response, next: NextFunction) => {
+// const getBookMarkByTags = async (req: Request, res: Response) => {
 //   try {
 //     //@ts-ignore
 //     const allBookmark = await Bookmark.find({ tags: req.body.tags });
@@ -112,7 +116,7 @@ const getBookmarkByTopic = async (req: Request, res: Response, next: NextFunctio
 //     });
 //   }
 // };
-const updateBookmark = async (req: Request, res: Response, next: NextFunction) => {
+const updateBookmark = async (req: Request, res: Response) => {
   try {
     // const { isChecked, image } = req.body;
     const { isChecked, image, topics } = req.body;
@@ -122,13 +126,13 @@ const updateBookmark = async (req: Request, res: Response, next: NextFunction) =
       const favicon = process.env.LOGO_FAVICON_URL.replace("<DOMAIN>", domain);
       req.body.image = favicon;
     }
-
+    // eslint-disable-next-line
     const Updatebookmark = await Bookmark.findByIdAndUpdate(
       { _id: req.body.id },
       req.body
     );
-    const x = await Bookmark.findById(req.body.id);
-    // @ts-ignore
+    // const x = await Bookmark.findById(req.body.id);
+    // @ts-expect-error: req.user is not typed
     const user = await User.findById({ _id: req.user._id });
     if (topics !== undefined && topics.length) {
       const result = user.topics.some((el) => {
@@ -148,7 +152,8 @@ const updateBookmark = async (req: Request, res: Response, next: NextFunction) =
 const updateBookmarkOrder = async (req: Request, res: Response) => {
   const { updatedOrder } = req.body;
   try {
-    for (let item of updatedOrder) {
+    for (const item of updatedOrder) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { _id: _, ...rest } = item;
       await Bookmark.findByIdAndUpdate(item._id, rest);
     }
@@ -159,15 +164,15 @@ const updateBookmarkOrder = async (req: Request, res: Response) => {
   }
 };
 
-const deleteBookmark = async (req: Request, res: Response, next: NextFunction) => {
+const deleteBookmark = async (req: Request, res: Response) => {
   try {
     await Bookmark.findByIdAndDelete(req.params.id);
-    //@ts-ignore
+    // @ts-expect-error: req.user is not typed
     const user = await User.findById({ _id: req.user._id });
-    //@ts-ignore
+    // @ts-expect-error: _id is not typed
     const filterOrder = user.posts.filter((el) => !el._id.equals(req.params.id));
-    let newpost: Array<mongoose.Schema.Types.ObjectId> = [];
-    //@ts-ignore
+    const newpost: Array<mongoose.Schema.Types.ObjectId> = [];
+    // @ts-expect-error: _id is not typed
     filterOrder.map((el) => newpost.push(el._id));
     user.posts = newpost;
     user.save();
@@ -176,19 +181,14 @@ const deleteBookmark = async (req: Request, res: Response, next: NextFunction) =
     ErrorResponse(res, err, 400);
   }
 };
-const deleteAllBookmarkByTopics = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+const deleteAllBookmarkByTopics = async (req: Request, res: Response) => {
   try {
     const { topics } = req.body;
-    //@ts-ignore
+    // @ts-expect-error: _id is not typed
     const user = await User.findById(req.user._id);
     await Bookmark.deleteMany({ topics, user_id: user._id });
-    //@ts-ignore
     // const user = await User.findById({ _id: req.user._id });
-    let alltopics = user.topics;
+    const alltopics = user.topics;
     if (alltopics.length) {
       const filterTopics = alltopics.filter(
         (el) => el.toLowerCase() !== topics.toLowerCase()
@@ -202,14 +202,14 @@ const deleteAllBookmarkByTopics = async (
   }
 };
 
-const addBookmarkTopic = async (req: Request, res: Response, next: NextFunction) => {
+const addBookmarkTopic = async (req: Request, res: Response) => {
   try {
     const bookmark = await Bookmark.findById({ _id: req.body.id });
     if (!bookmark) {
       throw new Error("Not found any Bookmark with this data");
     }
     const { topics }: Pick<IBookMark, "topics"> = req.body;
-    const addTopics = await Bookmark.findByIdAndUpdate({ _id: req.body.id }, { topics });
+    await Bookmark.findByIdAndUpdate({ _id: req.body.id }, { topics });
     SuccessResponseWithoutData(res, `Added topic ${topics} to bookmark`, 200);
   } catch (err) {
     ErrorResponse(res, err, 400);
@@ -232,7 +232,7 @@ const uploadBookmarkImage = async (req: Request, res: Response, next: NextFuncti
     bookmark.image = result.secure_url;
     await bookmark.save();
     // Optional Parameter which i am passing previously - newImage: bookmark.image,
-    SuccessResponse(res,"Uploaded Image to Cloudinary",200, bookmark);
+    SuccessResponse(res, "Uploaded Image to Cloudinary", 200, bookmark);
   } catch (err) {
     ErrorResponse(res, err, 400);
   }
@@ -248,7 +248,7 @@ const uploadImageToCloud = async (req: Request, res: Response, next: NextFunctio
       throw new Error("Failed to Upload Image");
     }
     const imageUrl = result.secure_url;
-    SuccessResponse(res,"Uploaded Image to Cloudinary",200, {imageUrl});
+    SuccessResponse(res, "Uploaded Image to Cloudinary", 200, { imageUrl });
   } catch (err) {
     ErrorResponse(res, err, 400);
   }
@@ -258,13 +258,9 @@ export const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_SECRET,
   process.env.GOOGLE_CALLBACK_CALENDAR
 );
-const addRemainderToCalendar = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+const addRemainderToCalendar = async (req: Request, res: Response) => {
   try {
-    const {summary, link, endDate, startDate} = req.body;
+    const { summary, link, endDate, startDate } = req.body;
     const calendar = google.calendar({ version: "v3", auth: oauth2Client });
     const event = {
       summary: summary,
@@ -289,26 +285,26 @@ const addRemainderToCalendar = async (
       calendarId: "primary", // Use the primary calendar of the user
       requestBody: event,
     });
-    const {kind, etag, id, htmlLink} = result.data
+    const { kind, etag, id, htmlLink } = result.data;
     res.status(200).json({
       status: "success",
       data: {
-        kind, etag, id, htmlLink, ...event
+        kind,
+        etag,
+        id,
+        htmlLink,
+        ...event,
       },
     });
   } catch (err) {
     ErrorResponse(res, err, 400);
   }
 };
-const updateRemainderToCalendar = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+const updateRemainderToCalendar = async (req: Request, res: Response) => {
   try {
     // bookmarkId - I am getting it from directly from frontend side just for bookmark Query
-    const {summary, link, endDate, startDate, eventId, bookmarkId} = req.body;
-    if(!eventId){
+    const { summary, link, endDate, startDate, eventId, bookmarkId } = req.body;
+    if (!eventId) {
       throw new Error("EventId is missing");
     }
     const calendar = google.calendar({ version: "v3", auth: oauth2Client });
@@ -334,61 +330,62 @@ const updateRemainderToCalendar = async (
     const result = await calendar.events.patch({
       calendarId: "primary", // Use the primary calendar of the user
       requestBody: event,
-      eventId:eventId
+      eventId: eventId,
     });
-    const {kind, id, htmlLink} = result.data
+    const { kind, id, htmlLink } = result.data;
     const calendarData = {
       kind,
       id,
       htmlLink,
       summary,
       description: event.description,
-      start : event.start.dateTime,
+      start: event.start.dateTime,
       end: event.end.dateTime,
-    }
-    const bookmarkCalendarData = await Bookmark.findById({_id: bookmarkId});
+    };
+    const bookmarkCalendarData = await Bookmark.findById({ _id: bookmarkId });
     bookmarkCalendarData.calendar = calendarData;
     bookmarkCalendarData.save();
 
     res.status(200).json({
       status: "success",
       data: {
-        kind, id, htmlLink, ...event
+        kind,
+        id,
+        htmlLink,
+        ...event,
       },
-      message:"Updated Your Remainder"
+      message: "Updated Your Remainder",
     });
   } catch (err) {
     ErrorResponse(res, err, 400);
   }
 };
 
-const deleteRemainder = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+const deleteRemainder = async (req: Request, res: Response) => {
   try {
     // bookmarkId - getting it from frontend side
-    const {eventId, bookmarkId} = req.body;
-    if(!eventId){
+    const { eventId, bookmarkId } = req.body;
+    if (!eventId) {
       throw new Error("EventId is missing");
     }
     const calendar = google.calendar({ version: "v3", auth: oauth2Client });
-    const result = await calendar.events.delete({
+    await calendar.events.delete({
       calendarId: "primary", // Use the primary calendar of the user
-      eventId: eventId
+      eventId: eventId,
     });
-    const bookmarkCalendarData = await Bookmark.updateOne({_id: bookmarkId}, {
-      $unset:{calendar: ""}
-    });
+    await Bookmark.updateOne(
+      { _id: bookmarkId },
+      {
+        $unset: { calendar: "" },
+      }
+    );
     SuccessResponseWithoutData(res, "Deleted remainder successfully", 200);
   } catch (err) {
     ErrorResponse(res, err, 400);
   }
 };
 
-
-const searchBookmark = async (req: Request, res: Response, next: NextFunction) => {
+const searchBookmark = async (req: Request, res: Response) => {
   try {
     const { searchField } = req.body;
     if (!searchField) {
@@ -420,7 +417,7 @@ const searchBookmark = async (req: Request, res: Response, next: NextFunction) =
     ErrorResponse(res, err, 400);
   }
 };
-const getAllChromeBookmark = async (req: Request, res: Response, next: NextFunction) => {
+const getAllChromeBookmark = async (req: Request, res: Response) => {
   try {
     const file = req.file;
     if (!file) {
@@ -436,7 +433,7 @@ const getAllChromeBookmark = async (req: Request, res: Response, next: NextFunct
     const $ = cheerio.load(fileRead);
     const user = await User.findById(req.user);
     const bookmarks: Partial<IBookMark>[] = [];
-    let position = user.posts.length + 1;
+    const position = user.posts.length + 1;
     $("a").each((i, elem) => {
       const title = $(elem).text();
       const link = $(elem).attr("href");
@@ -461,9 +458,7 @@ const getAllChromeBookmark = async (req: Request, res: Response, next: NextFunct
     if (!uploadBookmark) {
       throw new Error("Getting issue while uploading to database");
     }
-    const result = user.topics.find(
-      (el) => "chrome".toLowerCase() == el.toLowerCase()
-    );
+    const result = user.topics.find((el) => "chrome".toLowerCase() == el.toLowerCase());
     if (!result) {
       user.topics.push("chrome");
     }
@@ -476,20 +471,17 @@ const getAllChromeBookmark = async (req: Request, res: Response, next: NextFunct
       // allBookmark: bookmarks,
     });
   } catch (err) {
-    ErrorResponse(res,err,400);
+    ErrorResponse(res, err, 400);
   }
 };
 
-const getAllChromeBookmarkFromExtension =async (req: Request, res: Response, next: NextFunction) => {
-  try{
+const getAllChromeBookmarkFromExtension = async (req: Request, res: Response) => {
+  try {
     const user = await User.findById(req.user);
-    
-    const {allbookmark} = req.body;
-    const x : Partial<IBookMark>[] = allbookmark
+
+    const { allbookmark } = req.body;
     const uploadBookmark = await Bookmark.insertMany(allbookmark as Partial<IBookMark>[]);
-    const result = user.topics.find(
-      (el) => "chrome".toLowerCase() == el.toLowerCase()
-    );
+    const result = user.topics.find((el) => "chrome".toLowerCase() == el.toLowerCase());
     if (!result) {
       user.topics.push("chrome");
     }
@@ -501,10 +493,10 @@ const getAllChromeBookmarkFromExtension =async (req: Request, res: Response, nex
       totalBookmarkInserted: uploadBookmark.length,
       // allBookmark: bookmarks,
     });
-  }catch(err){
-      ErrorResponse(res,err,400);
+  } catch (err) {
+    ErrorResponse(res, err, 400);
   }
-}
+};
 // TODO : get bookmark by topic and set default as all
 // TODO : on selecting on any  tag fetch the data only for tag (get data by tag)
 
@@ -526,5 +518,5 @@ export {
   addRemainderToCalendar,
   updateRemainderToCalendar,
   deleteRemainder,
-  getAllChromeBookmarkFromExtension
+  getAllChromeBookmarkFromExtension,
 };

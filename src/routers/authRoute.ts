@@ -2,10 +2,14 @@ import { Router } from "express";
 const router = Router();
 import passport from "passport";
 import "../controllers/authController.js";
-import { type IUser } from "../models/userModel.js";
 
 // Google Router
-router.get("/google", passport.authenticate("google", { scope: ["profile", "email", "https://www.googleapis.com/auth/calendar"] }));
+router.get(
+  "/google",
+  passport.authenticate("google", {
+    scope: ["profile", "email", "https://www.googleapis.com/auth/calendar"],
+  })
+);
 
 router.get(
   "/google/callback",
@@ -26,10 +30,13 @@ router.get(
   })
 );
 
-// twitter router 
-router.get("/twitter", passport.authenticate("twitter", {
-  scope: ['tweet.read', 'users.read', 'offline.access'],
-}));
+// twitter router
+router.get(
+  "/twitter",
+  passport.authenticate("twitter", {
+    scope: ["tweet.read", "users.read", "offline.access"],
+  })
+);
 router.get(
   "/twitter/callback",
   passport.authenticate("twitter", {

@@ -6,6 +6,7 @@ import { Request, Response } from "express";
 import puppeteer from "puppeteer";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import nlp from "compromise";
+import { ErrorResponse } from "../utils/controllerUtils.js";
 const client = new OpenAI({
   apiKey: process.env["OPENAI_API_KEY"],
 });
@@ -25,6 +26,7 @@ async function fetchPageContent(url: string) {
   console.log(words);
   return words;
 }
+// eslint-disable-next-line
 async function fetchPageContentUsingPuppeeter(url: string) {
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
@@ -97,10 +99,7 @@ export const genereatedTagNsummaryByAI = async (req: Request, res: Response) => 
       },
     });
   } catch (err) {
-    res.status(400).json({
-      status: "failed",
-      message: (err as Error).message,
-    });
+    ErrorResponse(res, err, 400);
   }
 };
 function extractFiveTags(text: string) {
@@ -108,11 +107,11 @@ function extractFiveTags(text: string) {
     throw new Error("Did not get Any text here :(");
   }
   const doc = nlp(text);
-  const tags: Array<String> = doc.nouns().out("array");
+  const tags: Array<string> = doc.nouns().out("array");
   console.log(tags);
   const lowerCaseTags = tags.map((el) => el.toLowerCase());
   const filtertags = lowerCaseTags.filter((el) => el.length <= 20 && el.length > 5);
-  const uniqueTags: Array<String> = [...new Set(filtertags)];
+  const uniqueTags: Array<string> = [...new Set(filtertags)];
   return uniqueTags;
 }
 export const generateBybart = async (req: Request, res: Response) => {
@@ -147,11 +146,7 @@ export const generateBybart = async (req: Request, res: Response) => {
       },
     });
   } catch (err) {
-    console.log(err);
-    res.status(400).json({
-      status: "failed",
-      message: (err as Error).message,
-    });
+    ErrorResponse(res, err, 400);
   }
 };
 export async function generateByGemini(req: Request, res: Response) {
@@ -184,10 +179,6 @@ export async function generateByGemini(req: Request, res: Response) {
       },
     });
   } catch (err) {
-    console.log(err);
-    res.status(400).json({
-      status: "failed",
-      message: (err as Error).message,
-    });
+    ErrorResponse(res, err, 400);
   }
 }
