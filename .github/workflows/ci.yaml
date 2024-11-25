@@ -32,6 +32,8 @@ jobs:
         run: npm run lint
       - name: Prettier
         run: npm run format
+      - name: "Vitest Test"
+        run: npx vitest --coverage.enabled true
       - name: Vitest Coverage Report
         uses: davelosert/vitest-coverage-report-action@v2.8.0     
       - name: "Upload Coverage"
