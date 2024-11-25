@@ -1,4 +1,4 @@
-import express, { NextFunction, Request, Response } from "express";
+import express, { Request, Response } from "express";
 export const app = express();
 import CookieParser from "cookie-parser";
 import bodyParser from "body-parser";
@@ -46,7 +46,7 @@ app.use(passport.authenticate("session"));
 app.use("/auth", AuthRouter);
 app.use("/api", BookmarkRouter);
 app.use("/ai", AIRouter);
-app.get("/", (req: Request, res: Response) => {
+app.get("/", async (req: Request, res: Response) => {
   res.send("Server is Up and Running");
 });
 // login success router
@@ -63,9 +63,7 @@ app.get("/login/success", async (req: Request, res: Response) => {
 
 app.get("/login/twitter/success", async (req: Request, res: Response) => {
   const userData = JSON.stringify(req.user, undefined, 2);
-  res.end(
-    `<h1>Authentication succeeded</h1> User data: <pre>${userData}</pre>`
-  );
+  res.end(`<h1>Authentication succeeded</h1> User data: <pre>${userData}</pre>`);
 });
 app.get("/login/hello", isAuthenticated, (req: Request, res: Response) => {
   if (req.isAuthenticated() && req.user) {

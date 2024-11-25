@@ -46,6 +46,6 @@ router.delete("/delete-bookmark-by-topics", deleteAllBookmarkByTopics);
 /** CALENDAR */
 router.post("/calendar", addRemainderToCalendar);
 router.patch("/calendar/edit", updateRemainderToCalendar);
-router.delete('/calendar/delete', deleteRemainder);
+router.delete("/calendar/delete", deleteRemainder);
 
 export { router };

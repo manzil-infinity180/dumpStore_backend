@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import dotenv from "dotenv";
 dotenv.config();
 import jwt from "jsonwebtoken";
@@ -7,8 +8,9 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as GithubStrategy } from "passport-github2";
 import { IUser, User } from "../models/userModel.js";
 import mongoose from "mongoose";
-import { Strategy as TwitterStrategy} from "passport-twitter"
+import { Strategy as TwitterStrategy } from "passport-twitter";
 import { oauth2Client } from "./bookmarkController.js";
+import { ErrorResponse, SuccessResponseWithoutData } from "../utils/controllerUtils.js";
 
 // Passport serialization
 passport.serializeUser(function (user, cb) {
@@ -25,7 +27,6 @@ passport.deserializeUser(function (
     return cb(null, user);
   });
 });
-let req: Request;
 // Google Strategy
 const clientID = process.env.GOOGLE_CLIENT_ID_NEW;
 const clientSecret = process.env.GOOGLE_CLIENT_SECRET_NEW;
@@ -62,8 +63,7 @@ passport.use(
       const alreadyExistedUser = await User.findOne({
         emails: user.emails,
       });
-      console.log(accessToken)
-      oauth2Client.setCredentials({access_token : accessToken});
+      oauth2Client.setCredentials({ access_token: accessToken });
 
       if (alreadyExistedUser) {
         return done(null, alreadyExistedUser);
@@ -95,7 +95,7 @@ passport.use(
       profile: any,
       done: (error: any, user?: any) => void
     ) => {
-      let user: Pick<IUser, "id" | "displayName" | "emails" | "photos" | "provider"> = {
+      const user: Pick<IUser, "id" | "displayName" | "emails" | "photos" | "provider"> = {
         id: profile.id,
         displayName: profile.displayName || profile.username,
         emails: profile._json.email,
@@ -112,9 +112,7 @@ passport.use(
         });
 
         const emails: GitHubEmail[] = await response.json();
-        console.log(emails);
         const primaryEmail = emails.find((email) => email.primary);
-        console.log(primaryEmail);
         if (primaryEmail) {
           user.emails = primaryEmail.email;
         } else {
@@ -127,7 +125,6 @@ passport.use(
       if (alreadyExistedUser) {
         return done(null, alreadyExistedUser);
       }
-      console.log("From Github");
       //   TODO : Check is _id field is required ?
       const newUser = new User(user);
       await newUser.save();
@@ -136,21 +133,19 @@ passport.use(
   )
 );
 
-console.log({consumerKey: process.env.TWITTER_OAUTH_API_KEY,
-  consumerSecret: process.env.TWITTER_OAUTH_SECRET,
-  callbackURL: "/auth/twitter/callback"});
-  
-passport.use(new TwitterStrategy({
-  consumerKey: process.env.TWITTER_OAUTH_API_KEY,
-  consumerSecret: process.env.TWITTER_OAUTH_SECRET,
-  callbackURL: `/auth/twitter/callback`,
-  // callbackURL: "/auth/twitter/callback"
-},
-function(token, tokenSecret, profile, done) {
-  console.log(profile);
- return done(null, profile);
-}
-));
+passport.use(
+  new TwitterStrategy(
+    {
+      consumerKey: process.env.TWITTER_OAUTH_API_KEY,
+      consumerSecret: process.env.TWITTER_OAUTH_SECRET,
+      callbackURL: `/auth/twitter/callback`,
+      // callbackURL: "/auth/twitter/callback"
+    },
+    function (token, tokenSecret, profile, done) {
+      return done(null, profile);
+    }
+  )
+);
 
 /**
  * User interface we defined and the Express.User type expected by Passport.
@@ -181,10 +176,7 @@ export const isAuthenticated = async (
     req.user = currentloginedUser;
     next();
   } catch (err) {
-    res.status(400).json({
-      status: "failed",
-      message: (err as Error).message,
-    });
+    ErrorResponse(res, err, 400);
   }
 };
 
@@ -194,8 +186,6 @@ export const logout = async (req: Request, res: Response, next: NextFunction) =>
       throw new Error("Something went wrong");
     }
     res.clearCookie("jwt");
-    console.log("hello");
-    console.log(req.cookies.jwt);
     req.logOut((err) => {
       if (err) return next(err);
       // res.redirect("/");
@@ -204,10 +194,8 @@ export const logout = async (req: Request, res: Response, next: NextFunction) =>
       status: "success",
       message: "Logout Successfully",
     });
+    SuccessResponseWithoutData(res, "Logout Successfully", 200);
   } catch (err) {
-    res.status(400).json({
-      status: "failed",
-      message: (err as Error).message,
-    });
+    ErrorResponse(res, err, 400);
   }
 };

@@ -1,4 +1,4 @@
-import mongoose, { connect } from "mongoose";
+import { connect } from "mongoose";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -9,9 +9,7 @@ const DbConnection = async () => {
 
     // Validate that required environment variables are available
     if (!MONGODB_URI || !DB_PASSWORD) {
-      throw new Error(
-        "Environment variables MONGODDB_URI and DB_PASSWORD are required!"
-      );
+      throw new Error("Environment variables MONGODDB_URI and DB_PASSWORD are required!");
     }
     const DB = MONGODB_URI.replace("<DB_PASSWORD>", DB_PASSWORD);
     await connect(DB);

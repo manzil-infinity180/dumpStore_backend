@@ -3,6 +3,7 @@ import multer from "multer";
 import dotenv from "dotenv";
 dotenv.config();
 import { v2 as cloudinary, UploadApiErrorResponse, UploadApiResponse } from "cloudinary";
+import { ErrorResponse } from "./controllerUtils.js";
 const storage = multer.memoryStorage();
 export const upload = multer({ storage: storage });
 cloudinary.config({
@@ -19,6 +20,7 @@ export const UploadBookmarkFile = upload.single("bookmark");
 export const UploadImageToCloudinary = async (
   req: Request,
   res: Response,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   next: NextFunction
 ): Promise<UploadApiResponse | UploadApiErrorResponse> => {
   try {
@@ -44,10 +46,6 @@ export const UploadImageToCloudinary = async (
     });
     return result;
   } catch (err) {
-    console.log(err);
-    res.status(400).json({
-      status: "failed",
-      message: (err as Error).message,
-    });
+    ErrorResponse(res, err, 400);
   }
 };
