@@ -243,6 +243,8 @@ const uploadImageToCloud = async (req: Request, res: Response, next: NextFunctio
     if (!req.file) {
       throw new Error("No file found");
     }
+    let hello = "hello";
+    console.log(hello);
     const result = await UploadImageToCloudinary(req, res, next);
     if (result.length === 0 && !result.secure_url) {
       throw new Error("Failed to Upload Image");
