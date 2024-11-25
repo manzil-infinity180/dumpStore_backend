@@ -11,7 +11,7 @@
     "vercel-build": "npm run build",
     "postinstall": "tsc",
     "lint": "eslint ./src",
-    "format": "prettier ./src --write"
+    "format": "prettier --write \"./src/**/*.{js,jsx,ts,tsx,json,css,scss,md}\""
   },
   "keywords": [],
   "author": "",
