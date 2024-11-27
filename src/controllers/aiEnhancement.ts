@@ -7,6 +7,7 @@ import puppeteer from "puppeteer";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import nlp from "compromise";
 import { ErrorResponse } from "../utils/controllerUtils.js";
+import { scrapTwitter } from "../utils/twitterPostScrape.js";
 const client = new OpenAI({
   apiKey: process.env["OPENAI_API_KEY"],
 });
@@ -23,7 +24,6 @@ async function fetchPageContent(url: string) {
   let textContent = $("p").text();
   textContent = textContent.replace(/\s+/g, " ").trim(); // extra space
   const words = textContent.slice(0, 500);
-  console.log(words);
   return words;
 }
 // eslint-disable-next-line
@@ -36,8 +36,6 @@ async function fetchPageContentUsingPuppeeter(url: string) {
     return document.body.innerText;
   });
   await browser.close();
-  console.log(content.length);
-  // return content.toString().slice(0, 500);
   return content;
 }
 // generate tags and summary
@@ -69,10 +67,6 @@ async function generateTagsAndSummary(pageUrl: string) {
         content: "You are a helpful assistant that summarizes and generate tags",
       },
     ],
-  });
-  console.log({
-    summaryResponse,
-    tagsResponse,
   });
   const summary = summaryResponse.choices[0].message?.content.trim() ?? "";
   const tags =
@@ -108,7 +102,6 @@ function extractFiveTags(text: string) {
   }
   const doc = nlp(text);
   const tags: Array<string> = doc.nouns().out("array");
-  console.log(tags);
   const lowerCaseTags = tags.map((el) => el.toLowerCase());
   const filtertags = lowerCaseTags.filter((el) => el.length <= 20 && el.length > 5);
   const uniqueTags: Array<string> = [...new Set(filtertags)];
@@ -149,35 +142,52 @@ export const generateBybart = async (req: Request, res: Response) => {
     ErrorResponse(res, err, 400);
   }
 };
+async function helperFunctionGemini(prompt: string) {
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const result = await model.generateContent(prompt);
+  const data = result.response.text().replace(/\\/g, "").replace(/\n/g, "");
+  const summary = data.slice(
+    data.indexOf("Summary:") + "Summary: ".length,
+    data.indexOf("Tags:")
+  );
+  const title = data.slice(data.indexOf(":") + 2, data.indexOf("Summary"));
+  const tags = data
+    .slice(data.indexOf("[") + 1, data.indexOf("]"))
+    .replace(/"/g, "")
+    .split(", ");
+  return { summary, title, tags };
+}
+
 export async function generateByGemini(req: Request, res: Response) {
   try {
     const { url } = req.body;
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const checkUrl = new URL(url).hostname;
+    if (checkUrl.includes("twitter") || checkUrl.includes("x")) {
+      const scrapData = await scrapTwitter(url, true);
+      const prompt = `Summarize the key content "${scrapData.tweetText}" in 30 to 40 words in one paragraph. Give the output in format like Title: Content lesser than 15 words, Summary: Content, Tags:[5 short descriptive keywords or phrases related to the content less than 20 letters]`;
+      const { summary, title, tags } = await helperFunctionGemini(prompt);
+      res.status(200).json({
+        status: "success",
+        data: {
+          summary,
+          title,
+          tags,
+        },
+      });
+    } else {
+      const prompt = `Summarize the key content of the webpage found at ${url}  in 30 to 40 words in one paragraph. Give the output in format like Title: Content, Summary: Content, Tags:[5 short descriptive keywords or phrases related to the content less than 20 letters]`;
+      const { summary, title, tags } = await helperFunctionGemini(prompt);
 
-    const prompt = `Summarize the key content of the webpage found at ${url}  in 30 to 40 words in one paragraph. Give the output in format like Title: Content, Summary: Content, Tags:[5 Tags Only]`;
-
-    const result = await model.generateContent(prompt);
-    const data = result.response.text().replace(/\\/g, "").replace(/\n/g, "");
-    const summary = data.slice(
-      data.indexOf("Summary:") + "Summary: ".length,
-      data.indexOf("Tags:")
-    );
-    const title = data.slice(data.indexOf(":") + 2, data.indexOf("Summary"));
-    console.log(data.indexOf("["));
-    const tags = data
-      .slice(data.indexOf("[") + 1, data.indexOf("]"))
-      .replace(/"/g, "")
-      .split(", ");
-    console.log(data);
-    res.status(200).json({
-      status: "success",
-      data: {
-        summary,
-        title,
-        tags,
-      },
-    });
+      res.status(200).json({
+        status: "success",
+        data: {
+          summary,
+          title,
+          tags,
+        },
+      });
+    }
   } catch (err) {
     ErrorResponse(res, err, 400);
   }

@@ -17,6 +17,7 @@ export default [
       "no-multiple-empty-lines": "error",
     },
   },
+  
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
   {

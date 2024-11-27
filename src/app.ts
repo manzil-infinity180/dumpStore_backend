@@ -68,7 +68,6 @@ app.get("/login/twitter/success", async (req: Request, res: Response) => {
 app.get("/login/hello", isAuthenticated, (req: Request, res: Response) => {
   if (req.isAuthenticated() && req.user) {
     const user = req.user as IUser;
-    console.log(req.user);
     res.send(`Welcome ${user.displayName}`);
   } else {
     res.redirect("/login");
@@ -85,6 +84,5 @@ app.get("/bookmark", isAuthenticated, async (req: Request, res: Response) => {
   });
 
   const data = await response.json();
-  console.log(data);
   res.send(data);
 });
