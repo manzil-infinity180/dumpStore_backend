@@ -24,7 +24,6 @@ async function fetchPageContent(url: string) {
   let textContent = $("p").text();
   textContent = textContent.replace(/\s+/g, " ").trim(); // extra space
   const words = textContent.slice(0, 500);
-  console.log(words);
   return words;
 }
 // eslint-disable-next-line
@@ -37,8 +36,6 @@ async function fetchPageContentUsingPuppeeter(url: string) {
     return document.body.innerText;
   });
   await browser.close();
-  console.log(content.length);
-  // return content.toString().slice(0, 500);
   return content;
 }
 // generate tags and summary
@@ -70,10 +67,6 @@ async function generateTagsAndSummary(pageUrl: string) {
         content: "You are a helpful assistant that summarizes and generate tags",
       },
     ],
-  });
-  console.log({
-    summaryResponse,
-    tagsResponse,
   });
   const summary = summaryResponse.choices[0].message?.content.trim() ?? "";
   const tags =
@@ -109,7 +102,6 @@ function extractFiveTags(text: string) {
   }
   const doc = nlp(text);
   const tags: Array<string> = doc.nouns().out("array");
-  console.log(tags);
   const lowerCaseTags = tags.map((el) => el.toLowerCase());
   const filtertags = lowerCaseTags.filter((el) => el.length <= 20 && el.length > 5);
   const uniqueTags: Array<string> = [...new Set(filtertags)];
@@ -155,13 +147,11 @@ async function helperFunctionGemini(prompt: string) {
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
   const result = await model.generateContent(prompt);
   const data = result.response.text().replace(/\\/g, "").replace(/\n/g, "");
-  console.log({ data });
   const summary = data.slice(
     data.indexOf("Summary:") + "Summary: ".length,
     data.indexOf("Tags:")
   );
   const title = data.slice(data.indexOf(":") + 2, data.indexOf("Summary"));
-  console.log(data.indexOf("["));
   const tags = data
     .slice(data.indexOf("[") + 1, data.indexOf("]"))
     .replace(/"/g, "")
